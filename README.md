@@ -2,7 +2,7 @@ Proyecto Final Nómina
 
 Sistema de gestión de nómina desarrollado con Node.js + Express + MySQL en el backend y React + Vite en el frontend.
 Incluye módulos de empleados, usuarios, novedades, pagos y reportes, con autenticación mediante JWT.
-
+---------------------------------------------------------------------------------------------------------------------------------
 🚀 Tecnologías usadas¨
 
 * Backend
@@ -25,7 +25,7 @@ Incluye módulos de empleados, usuarios, novedades, pagos y reportes, con autent
 
 * Base de datos
 MySQL Server
-
+---------------------------------------------------------------------------------------------------------------------------------
 ⚙️ Instalación y Configuración
 1️⃣ Clonar el repositorio
 git clone https://github.com/EdwinArcangel/Proyecto_Final_Nomina.git
@@ -86,8 +86,8 @@ npm run dev
 
 
 Frontend disponible en:
-👉 http://localhost:5173
-
+ http://localhost:5173
+---------------------------------------------------------------------------------------------------------------------------------
 📊 Módulos principales
 
 Login y Autenticación 🔐
