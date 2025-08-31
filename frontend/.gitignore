@@ -1,24 +1,53 @@
-# Logs
-logs
-*.log
+# === Node.js ===
+node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
-lerna-debug.log*
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
 
-node_modules
-dist
-dist-ssr
+# === Logs ===
+logs
+*.log
+logs/**/*.log
+debug.log
+error.log
+
+# === Build / Dist ===
+dist/
+build/
+.cache/
+.next/
+out/
+
+# === React (Vite / CRA) ===
+.vite/
 *.local
+*.env.local
+*.env.development.local
+*.env.test.local
+*.env.production.local
 
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
+# === Environment Variables ===
+.env
+.env.*
+
+# === Database / MySQL dumps ===
+*.sql
+*.sqlite
+*.db
+*.db-journal
+
+# === OS / IDE ===
 .DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# === Coverage / Tests ===
+coverage/
+*.lcov
