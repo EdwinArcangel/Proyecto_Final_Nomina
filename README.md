@@ -1,117 +1,135 @@
-Proyecto Final Nómina
 
+# E -Nomina
 Sistema de gestión de nómina desarrollado con Node.js + Express + MySQL en el backend y React + Vite en el frontend.
 Incluye módulos de empleados, usuarios, novedades, pagos y reportes, con autenticación mediante JWT.
+Proyecto Final Nómina
+
 ---------------------------------------------------------------------------------------------------------------------------------
-🚀 Tecnologías usadas¨
+# 🚀 Tecnologías usadas
 
 * Backend
-  Node.js
-  Express
-  MySQL2
-  Bcrypt
-  JSON Web Token (JWT)
-  CORS
-  Dotenv
-  Nodemon (dev)
+* Node.js
+* Express
+* MySQL2
+* Bcrypt
+* JSON Web Token (JWT)
+  
+ * ORS
+  
+  * Dotenv
+  
+  * Nodemon (dev)
 
 * Frontend
-  React
-  React Router DOM 
-  Axios
-  React Toastify
-  Recharts
-  Vite
+  
+ * React
+  
+ * React Router DOM 
+  
+  * Axios
+  
+  * React Toastify
+  
+ * Recharts
 
-* Base de datos
-MySQL Server
+  * Vite
+
+
 ---------------------------------------------------------------------------------------------------------------------------------
-⚙️ Instalación y Configuración
+# ⚙️ Instalación y Configuración
+
 1️⃣ Clonar el repositorio
+
 git clone https://github.com/EdwinArcangel/Proyecto_Final_Nomina.git
-cd Proyecto_Final_Nomina
+
 
 2️⃣ Backend
-Ir a la carpeta backend/:
 
-ejecutar comando
-cd backend
-npm install
+* Ir a la carpeta backend/:
 
-Dependencias
-npm install express mysql2 bcrypt jsonwebtoken cors dotenv
-npm install --save-dev nodemon
+* ejecutar comando:
+  cd backend npm install
 
-Variables de entorno (.env)
-Crear archivo .env en backend/:
+# Dependencias Backend:
 
-DB_HOST=localhost
-DB_USER=root
-DB_PASSWORD= '' password configurado 
-DB_NAME=nomina_db
-JWT_SECRET=mi_secreto
+* npm install express mysql2 bcrypt jsonwebtoken cors dotenv
 
-Ejecutar servidor backend
+* npm install --save-dev nodemon
+
+* Variables de entorno (.env)
+
+# Crear archivo .env en backend/:
+
+* DB_HOST=localhost
+
+* B_USER=root
+
+* DB_PASSWORD= '' password configurado 
+
+* DB_NAME=nomina_db
+
+* JWT_SECRET=mi_secreto
+
+* Ejecutar servidor backend
 
 ⚠️ Antes de iniciar, asegúrate de levantar MySQL:
 
 # Windows
-net start mysql
+* net start mysql
 
 # Linux/Mac
-sudo service mysql start
+* sudo service mysql start
 
 
 Luego ejecutar:
 
-npm run dev
+* npm run dev
 
 
-Servidor disponible en:
-👉 http://localhost:3000
+* Servidor disponible en: http://localhost:3000
 
 3️⃣ Frontend
 
-Ir a la carpeta frontend/:
+* Ir a la carpeta frontend/:
 
-cd frontend
-npm install
+* npm install
 
-Dependencias
-npm install react react-dom react-router-dom axios react-toastify recharts
-npm install --save-dev vite @vitejs/plugin-react
+# Dependencias Frontend
+* npm install react react-dom react-router-dom axios react-toastify recharts
+* npm install --save-dev vite @vitejs/plugin-react
 
-Ejecutar frontend
-npm run dev
+* Ejecutar frontend: npm run dev
 
 
-Frontend disponible en:
+ Frontend disponible en:
  http://localhost:5173
 ---------------------------------------------------------------------------------------------------------------------------------
 📊 Módulos principales
 
-Login y Autenticación 🔐
+* Login y Autenticación
 
-Dashboard 📊 con métricas de empleados, usuarios, pagos y novedades
+* Dashboard con métricas de empleados, usuarios, pagos y novedades
 
-Gestión de Empleados 👥 (CRUD con cargos relacionados)
+* Gestión de Empleados  (CRUD con cargos relacionados)
 
-Gestión de Usuarios 🧑‍💻
+* Gestión de Usuarios 
 
-Gestión de Novedades 📌
+* Gestión de Novedades 
 
-Gestión de Pagos 💰
+* Gestión de Pagos 
 
-Reportes 📑 exportables a Excel
+* Reportes  exportables a Excel
 
-🛠️ Scripts disponibles
-Backend
-npm run dev   # Levanta el servidor con nodemon
+# 🛠️ Scripts disponibles
+# Backend
+* npm run dev:  Levanta el servidor con nodemon
 
-Frontend
-npm run dev   # Levanta el frontend con Vite
+# Frontend
+* npm run dev: Levanta el frontend con Vite
 
-👨‍💻 Autor
+# 👨‍💻 Autor
+
+
 
 Edwin Arcangel
 📌 Proyecto académico / Sistema de nómina
