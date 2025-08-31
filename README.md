@@ -34,7 +34,38 @@ Proyecto Final Nómina
 
   * Vite
 
+---------------------------------------------------------------------------------------------------------------------------------
 
+Proyecto_Final_Nomina/
+│
+├── backend/ # Lógica del servidor (Node.js + Express)
+│ ├── config/
+│ │ └── db.js # Conexión a MySQL y creación automática de tablas
+│ │
+│ ├── routes/ # Rutas del backend (APIs REST)
+│ │ ├── auth.js # Login con JWT
+│ │ ├── empleados.js # CRUD de empleados
+│ │ ├── usuarios.js # CRUD de usuarios
+│ │ ├── novedades.js # CRUD de novedades
+│ │ ├── pagos.js # CRUD de pagos
+│ │ ├── cargos.js # CRUD de cargos
+│ │ └── dashboard.js # Datos para el panel de control
+│ │
+│ └── server.js # Punto de entrada del backend
+│
+├── frontend/ # Aplicación cliente (React + Vite)
+│ └── src/
+│ ├── home/ # Dashboard principal
+│ ├── employees/ # Gestión de empleados
+│ ├── users/ # Gestión de usuarios
+│ ├── novedades/ # Gestión de novedades
+│ ├── payments/ # Gestión de pagos
+│ ├── reportes/ # Reportes en Excel/PDF
+│ ├── utils/ # Configuración de API (axios, helpers, etc.)
+│ ├── App.jsx # Rutas protegidas con React Router
+│ └── index.html
+│
+└── README.md # Documentación del proyecto
 ---------------------------------------------------------------------------------------------------------------------------------
 # ⚙️ Instalación y Configuración
 
