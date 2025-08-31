@@ -1,101 +1,117 @@
-# vary
+Proyecto Final Nómina
 
-[![NPM Version][npm-image]][npm-url]
-[![NPM Downloads][downloads-image]][downloads-url]
-[![Node.js Version][node-version-image]][node-version-url]
-[![Build Status][travis-image]][travis-url]
-[![Test Coverage][coveralls-image]][coveralls-url]
+Sistema de gestión de nómina desarrollado con Node.js + Express + MySQL en el backend y React + Vite en el frontend.
+Incluye módulos de empleados, usuarios, novedades, pagos y reportes, con autenticación mediante JWT.
 
-Manipulate the HTTP Vary header
+🚀 Tecnologías usadas¨
 
-## Installation
+* Backend
+  Node.js
+  Express
+  MySQL2
+  Bcrypt
+  JSON Web Token (JWT)
+  CORS
+  Dotenv
+  Nodemon (dev)
 
-This is a [Node.js](https://nodejs.org/en/) module available through the
-[npm registry](https://www.npmjs.com/). Installation is done using the
-[`npm install` command](https://docs.npmjs.com/getting-started/installing-npm-packages-locally): 
+* Frontend
+  React
+  React Router DOM 
+  Axios
+  React Toastify
+  Recharts
+  Vite
 
-```sh
-$ npm install vary
-```
+* Base de datos
+MySQL Server
 
-## API
+⚙️ Instalación y Configuración
+1️⃣ Clonar el repositorio
+git clone https://github.com/EdwinArcangel/Proyecto_Final_Nomina.git
+cd Proyecto_Final_Nomina
 
-<!-- eslint-disable no-unused-vars -->
+2️⃣ Backend
+Ir a la carpeta backend/:
 
-```js
-var vary = require('vary')
-```
+ejecutar comando
+cd backend
+npm install
 
-### vary(res, field)
+Dependencias
+npm install express mysql2 bcrypt jsonwebtoken cors dotenv
+npm install --save-dev nodemon
 
-Adds the given header `field` to the `Vary` response header of `res`.
-This can be a string of a single field, a string of a valid `Vary`
-header, or an array of multiple fields.
+Variables de entorno (.env)
+Crear archivo .env en backend/:
 
-This will append the header if not already listed, otherwise leaves
-it listed in the current location.
+DB_HOST=localhost
+DB_USER=root
+DB_PASSWORD= '' password configurado 
+DB_NAME=nomina_db
+JWT_SECRET=mi_secreto
 
-<!-- eslint-disable no-undef -->
+Ejecutar servidor backend
 
-```js
-// Append "Origin" to the Vary header of the response
-vary(res, 'Origin')
-```
+⚠️ Antes de iniciar, asegúrate de levantar MySQL:
 
-### vary.append(header, field)
+# Windows
+net start mysql
 
-Adds the given header `field` to the `Vary` response header string `header`.
-This can be a string of a single field, a string of a valid `Vary` header,
-or an array of multiple fields.
+# Linux/Mac
+sudo service mysql start
 
-This will append the header if not already listed, otherwise leaves
-it listed in the current location. The new header string is returned.
 
-<!-- eslint-disable no-undef -->
+Luego ejecutar:
 
-```js
-// Get header string appending "Origin" to "Accept, User-Agent"
-vary.append('Accept, User-Agent', 'Origin')
-```
+npm run dev
 
-## Examples
 
-### Updating the Vary header when content is based on it
+Servidor disponible en:
+👉 http://localhost:3000
 
-```js
-var http = require('http')
-var vary = require('vary')
+3️⃣ Frontend
 
-http.createServer(function onRequest (req, res) {
-  // about to user-agent sniff
-  vary(res, 'User-Agent')
+Ir a la carpeta frontend/:
 
-  var ua = req.headers['user-agent'] || ''
-  var isMobile = /mobi|android|touch|mini/i.test(ua)
+cd frontend
+npm install
 
-  // serve site, depending on isMobile
-  res.setHeader('Content-Type', 'text/html')
-  res.end('You are (probably) ' + (isMobile ? '' : 'not ') + 'a mobile user')
-})
-```
+Dependencias
+npm install react react-dom react-router-dom axios react-toastify recharts
+npm install --save-dev vite @vitejs/plugin-react
 
-## Testing
+Ejecutar frontend
+npm run dev
 
-```sh
-$ npm test
-```
 
-## License
+Frontend disponible en:
+👉 http://localhost:5173
 
-[MIT](LICENSE)
+📊 Módulos principales
 
-[npm-image]: https://img.shields.io/npm/v/vary.svg
-[npm-url]: https://npmjs.org/package/vary
-[node-version-image]: https://img.shields.io/node/v/vary.svg
-[node-version-url]: https://nodejs.org/en/download
-[travis-image]: https://img.shields.io/travis/jshttp/vary/master.svg
-[travis-url]: https://travis-ci.org/jshttp/vary
-[coveralls-image]: https://img.shields.io/coveralls/jshttp/vary/master.svg
-[coveralls-url]: https://coveralls.io/r/jshttp/vary
-[downloads-image]: https://img.shields.io/npm/dm/vary.svg
-[downloads-url]: https://npmjs.org/package/vary
+Login y Autenticación 🔐
+
+Dashboard 📊 con métricas de empleados, usuarios, pagos y novedades
+
+Gestión de Empleados 👥 (CRUD con cargos relacionados)
+
+Gestión de Usuarios 🧑‍💻
+
+Gestión de Novedades 📌
+
+Gestión de Pagos 💰
+
+Reportes 📑 exportables a Excel
+
+🛠️ Scripts disponibles
+Backend
+npm run dev   # Levanta el servidor con nodemon
+
+Frontend
+npm run dev   # Levanta el frontend con Vite
+
+👨‍💻 Autor
+
+Edwin Arcangel
+📌 Proyecto académico / Sistema de nómina
