@@ -9,7 +9,8 @@ import authRoutes from "./routes/auth.js";
 import dashboardRoutes from "./routes/dashboard.js";
 import novedadesRoutes from "./routes/novedades.js";
 import cargosRoutes from "./routes/cargos.js";
-import reportesRoutes from "./routes/cargos.js";
+import reportesRoutes  from "./routes/reportes.js";
+
 
 
 
@@ -43,7 +44,7 @@ app.use("/api/pagos", pagosRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/novedades", novedadesRoutes);
 app.use("/api/cargos", cargosRoutes);
-app.use("/api/reportes", cargosRoutes);
+app.use("/api/reportes", reportesRoutes);
 
 
 /* Ruta raíz para verificar */

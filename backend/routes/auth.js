@@ -36,10 +36,16 @@ router.post("/login", async (req, res) => {
     );
 
     // Respuesta exitosa
-    res.json({
-      message: "Login exitoso",
-      token,
-    });
+res.json({
+  message: "Login exitoso",
+  token,
+  usuario: {
+    id: usuario.id,
+    nombre: usuario.nombre_usuario,
+    email: usuario.email,
+    rol: usuario.rol,
+  }
+});
 
   } catch (error) {
     console.error("❌ Error en el servidor:", error);
