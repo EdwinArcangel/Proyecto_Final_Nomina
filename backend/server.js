@@ -1,20 +1,24 @@
 // server.js
+import "dotenv/config"; // En local carga variables de .env (en Render se inyectan)
 import app from "./app.js";
 import { connectDB } from "./config/db.js";
 
-const PORT = 3000;
+const PORT = Number(process.env.PORT) || 3000;
+const HOST = "0.0.0.0";
 
 try {
-  await connectDB(); // conectar DB primero
-  app.listen(PORT, "0.0.0.0", () => {
-    console.log(`Servidor corriendo en http://localhost:${PORT}`);
+  // Conectar DB antes de levantar el servidor
+  await connectDB();
+
+  app.listen(PORT, HOST, () => {
+    console.log(`Servidor corriendo en ${HOST}:${PORT}`);
   });
 } catch (error) {
   console.error("Error al iniciar el servidor:", error?.message || error);
   process.exit(1);
 }
 
-// (Opcional) Manejo global de errores:
+// (Opcional) Manejo global de errores
 process.on("uncaughtException", (err) => {
   console.error("uncaughtException:", err);
   process.exit(1);
