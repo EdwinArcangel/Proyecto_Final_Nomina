@@ -148,7 +148,14 @@ Luego ejecutar:
 
 # 👨‍💻 Autor
 
+# Video de Funcionamiento
+https://vimeo.com/1114750546
 
+## 🧪 Pruebas con Postman
+
+archivo de coleccion en carpeta collection
+
+[text](../../Downloads/collection.json)
 
 Edwin Arcangel
 📌 Proyecto académico / Sistema de nómina
