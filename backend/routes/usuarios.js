@@ -1,3 +1,4 @@
+// routes/usuarios.js
 import express from "express";
 import bcrypt from "bcrypt";
 import { connection } from "../config/db.js";
@@ -27,11 +28,15 @@ router.post("/", async (req, res) => {
     const { nombre_usuario, email, password, rol } = req.body;
 
     if (!nombre_usuario || !email || !password || !rol) {
-      return res.status(400).json({ message: "Todos los campos son obligatorios" });
+      return res
+        .status(400)
+        .json({ message: "Todos los campos son obligatorios" });
     }
 
     if (!["admin", "empleado"].includes(rol)) {
-      return res.status(400).json({ message: "Rol inválido (solo admin o empleado)" });
+      return res
+        .status(400)
+        .json({ message: "Rol inválido (solo admin o empleado)" });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -40,6 +45,24 @@ router.post("/", async (req, res) => {
       "INSERT INTO usuarios (nombre_usuario, email, password, rol) VALUES (?, ?, ?, ?)",
       [nombre_usuario, email, hashedPassword, rol]
     );
+
+    // 👉 Si el rol es empleado, lo insertamos también en empleados
+    if (rol === "empleado") {
+      const [empleadoRows] = await connection.query(
+        "SELECT id FROM empleados WHERE email = ?",
+        [email]
+      );
+
+      if (empleadoRows.length === 0) {
+        await connection.query(
+          `INSERT INTO empleados 
+            (nombre_empleado, documento, email, fecha_ingreso, estado, cargo_id, salario_base, eps, pension, arl)
+           VALUES (?, ?, ?, CURDATE(), 'activo', 1, 0, NULL, NULL, NULL)`,
+          [nombre_usuario, "TEMP-" + Date.now(), email]
+        );
+        console.log("👥 Empleado creado automáticamente para usuario:", email);
+      }
+    }
 
     res.json({ message: "✅ Usuario creado con éxito" });
   } catch (err) {
@@ -63,16 +86,36 @@ router.put("/:id", async (req, res) => {
       return res.status(400).json({ message: "Rol inválido" });
     }
 
-    let query = "UPDATE usuarios SET nombre_usuario = ?, email = ?, rol = ? WHERE id = ?";
+    let query =
+      "UPDATE usuarios SET nombre_usuario = ?, email = ?, rol = ? WHERE id = ?";
     let params = [nombre_usuario, email, rol, id];
 
     if (password && password.trim() !== "") {
       const hashedPassword = await bcrypt.hash(password, 10);
-      query = "UPDATE usuarios SET nombre_usuario = ?, email = ?, password = ?, rol = ? WHERE id = ?";
+      query =
+        "UPDATE usuarios SET nombre_usuario = ?, email = ?, password = ?, rol = ? WHERE id = ?";
       params = [nombre_usuario, email, hashedPassword, rol, id];
     }
 
     await connection.query(query, params);
+
+    // 👉 Si el rol es "empleado", aseguramos que esté en la tabla empleados
+    if (rol === "empleado") {
+      const [empleadoRows] = await connection.query(
+        "SELECT id FROM empleados WHERE email = ?",
+        [email]
+      );
+
+      if (empleadoRows.length === 0) {
+        await connection.query(
+          `INSERT INTO empleados 
+            (nombre_empleado, documento, email, fecha_ingreso, estado, cargo_id, salario_base, eps, pension, arl)
+           VALUES (?, ?, ?, CURDATE(), 'activo', 1, 0, NULL, NULL, NULL)`,
+          [nombre_usuario, "TEMP-" + id, email]
+        );
+        console.log("👥 Empleado creado automáticamente para usuario:", email);
+      }
+    }
 
     res.json({ message: "✅ Usuario actualizado con éxito" });
   } catch (err) {

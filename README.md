@@ -91,15 +91,10 @@ git clone https://github.com/EdwinArcangel/Proyecto_Final_Nomina.git
 
 # Crear archivo .env en backend/:
 
-* DB_HOST=localhost
-
-* B_USER=root
-
-* DB_PASSWORD= '' password configurado 
-
-* DB_NAME=nomina_db
-
-* JWT_SECRET=mi_secreto
+DB_HOST=localhost
+DB_USER=root
+DB_PASSWORD= '' password configurado 
+DB_NAME=nomina_db
 
 * Ejecutar servidor backend
 
@@ -113,8 +108,8 @@ git clone https://github.com/EdwinArcangel/Proyecto_Final_Nomina.git
 
 
 Luego ejecutar:
+ node server.js
 
-* npm run dev
 
 
 * Servidor disponible en: http://localhost:3000
@@ -123,14 +118,7 @@ Luego ejecutar:
 
 * Ir a la carpeta frontend/:
 
-* npm install
-
-# Dependencias Frontend
-* npm install react react-dom react-router-dom axios react-toastify recharts
-* npm install --save-dev vite @vitejs/plugin-react
-
 * Ejecutar frontend: npm run dev
-
 
  Frontend disponible en:
  http://localhost:5173
