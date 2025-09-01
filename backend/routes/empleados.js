@@ -17,7 +17,7 @@ router.post("/", async (req, res) => {
       direccion,
       fecha_ingreso,
       estado,
-      cargo,
+      cargo, // en texto
       salario_base,
       eps,
       pension,
@@ -26,20 +26,24 @@ router.post("/", async (req, res) => {
 
     if (!nombre_empleado || !documento || !cargo || !salario_base) {
       return res.status(400).json({
-        message: "Faltan datos obligatorios (nombre_empleado, documento, cargo, salario_base)",
+        message:
+          "Faltan datos obligatorios (nombre_empleado, documento, cargo, salario_base)",
       });
     }
 
     // 1. Verificar si el cargo ya existe
-    let [cargoRow] = await connection.query("SELECT id FROM cargos WHERE nombre = ?", [cargo]);
+    let [cargoRow] = await connection.query(
+      "SELECT id FROM cargos WHERE nombre = ?",
+      [cargo]
+    );
     let cargo_id;
     if (cargoRow.length > 0) {
       cargo_id = cargoRow[0].id;
     } else {
-      // 2. Crear cargo automáticamente
+      // 2. Crear cargo automáticamente (departamento_id = NULL)
       const [insertCargo] = await connection.query(
-        "INSERT INTO cargos (nombre, departamento, salario_base) VALUES (?, ?, ?)",
-        [cargo, "General", salario_base]
+        "INSERT INTO cargos (nombre, salario_base, departamento_id) VALUES (?, ?, ?)",
+        [cargo, salario_base, null]
       );
       cargo_id = insertCargo.insertId;
     }
@@ -67,18 +71,8 @@ router.post("/", async (req, res) => {
 
     res.status(201).json({ message: "✅ Empleado creado con éxito" });
   } catch (err) {
-    console.error("❌ Error creando empleado:", err.message);
-
-    if (err.code === "ER_DUP_ENTRY") {
-      if (err.message.includes("documento")) {
-        return res.status(400).json({ message: "Documento ya registrado" });
-      }
-      if (err.message.includes("email")) {
-        return res.status(400).json({ message: "Email ya registrado" });
-      }
-    }
-
-    res.status(500).json({ message: "Error al crear empleado" });
+    console.error("❌ Error creando empleado:", err);
+    res.status(500).json({ message: err.message || "Error al crear empleado" });
   }
 });
 
@@ -99,8 +93,8 @@ router.get("/", async (_req, res) => {
     `);
     res.json(rows);
   } catch (err) {
-    console.error("❌ Error listando empleados:", err.message);
-    res.status(500).json({ message: "Error al obtener empleados" });
+    console.error("❌ Error listando empleados:", err);
+    res.status(500).json({ message: err.message || "Error al obtener empleados" });
   }
 });
 
@@ -121,11 +115,12 @@ router.get("/:id", async (req, res) => {
       [req.params.id]
     );
 
-    if (rows.length === 0) return res.status(404).json({ message: "Empleado no encontrado" });
+    if (rows.length === 0)
+      return res.status(404).json({ message: "Empleado no encontrado" });
     res.json(rows[0]);
   } catch (err) {
-    console.error("❌ Error obteniendo empleado:", err.message);
-    res.status(500).json({ message: "Error al obtener empleado" });
+    console.error("❌ Error obteniendo empleado:", err);
+    res.status(500).json({ message: err.message || "Error al obtener empleado" });
   }
 });
 
@@ -151,19 +146,23 @@ router.put("/:id", async (req, res) => {
 
     if (!nombre_empleado || !documento || !cargo || !salario_base) {
       return res.status(400).json({
-        message: "Faltan datos obligatorios (nombre_empleado, documento, cargo, salario_base)",
+        message:
+          "Faltan datos obligatorios (nombre_empleado, documento, cargo, salario_base)",
       });
     }
 
     // 1. Buscar cargo
-    let [cargoRow] = await connection.query("SELECT id FROM cargos WHERE nombre = ?", [cargo]);
+    let [cargoRow] = await connection.query(
+      "SELECT id FROM cargos WHERE nombre = ?",
+      [cargo]
+    );
     let cargo_id;
     if (cargoRow.length > 0) {
       cargo_id = cargoRow[0].id;
     } else {
       const [insertCargo] = await connection.query(
-        "INSERT INTO cargos (nombre, departamento, salario_base) VALUES (?, ?, ?)",
-        [cargo, "General", salario_base]
+        "INSERT INTO cargos (nombre, salario_base, departamento_id) VALUES (?, ?, ?)",
+        [cargo, salario_base, null]
       );
       cargo_id = insertCargo.insertId;
     }
@@ -192,8 +191,8 @@ router.put("/:id", async (req, res) => {
 
     res.json({ message: "✅ Empleado actualizado con éxito" });
   } catch (err) {
-    console.error("❌ Error actualizando empleado:", err.message);
-    res.status(500).json({ message: "Error al actualizar empleado" });
+    console.error("❌ Error actualizando empleado:", err);
+    res.status(500).json({ message: err.message || "Error al actualizar empleado" });
   }
 });
 
@@ -205,8 +204,8 @@ router.delete("/:id", async (req, res) => {
     await connection.query("DELETE FROM empleados WHERE id = ?", [req.params.id]);
     res.json({ message: "🗑️ Empleado eliminado con éxito" });
   } catch (err) {
-    console.error("❌ Error eliminando empleado:", err.message);
-    res.status(500).json({ message: "Error al eliminar empleado" });
+    console.error("❌ Error eliminando empleado:", err);
+    res.status(500).json({ message: err.message || "Error al eliminar empleado" });
   }
 });
 
