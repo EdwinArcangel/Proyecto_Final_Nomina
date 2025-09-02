@@ -100,7 +100,13 @@ function App() {
         <Route path="/" element={<Navigate to="/login" replace />} />
       </Routes>
 
-      <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} />
+<ToastContainer
+  position="top-right"
+  autoClose={3500}
+  newestOnTop
+  theme="colored"
+  toastStyle={{ fontSize: "14px", padding: "14px 16px", minWidth: "340px" }}
+/>
     </BrowserRouter>
   );
 }
