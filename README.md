@@ -1,40 +1,36 @@
 
-# E -Nomina
-Sistema de gestión de nómina desarrollado con Node.js + Express + MySQL en el backend y React + Vite en el frontend.
-Incluye módulos de empleados, usuarios, novedades, pagos y reportes, con autenticación mediante JWT.
-Proyecto Final Nómina
+***********************PROYECTO FINAL DE SOFTWARE***********************
 
+E- NOMINA
+
+presentado por:
+
+Edwin Escobar Bran
+
+Aplicación web con frontend y backend separados, diseñada para gestionar el proceso de nómina en una empresa.
+Incluye autenticación, panel de administración, gestión de empleados, usuarios, novedades, pagos y reportes exportables.
+
+----------------------------NOTA----------------------------------------------
+
+EL SIGUIENTE ES EL LINK DEL PROYECTO DESPLEGADO EN LA NUBE:
+    
 ---------------------------------------------------------------------------------------------------------------------------------
-# 🚀 Tecnologías usadas
+Importante
 
-* Backend
-* Node.js
-* Express
-* MySQL2
-* Bcrypt
-* JSON Web Token (JWT)
-  
- * ORS
-  
-  * Dotenv
-  
-  * Nodemon (dev)
+Ver el video del funcionamiento de software primero:
 
-* Frontend
-  
- * React
-  
- * React Router DOM 
-  
-  * Axios
-  
-  * React Toastify
-  
- * Recharts
-
-  * Vite
-
+    https://vimeo.com/1114750546
 ---------------------------------------------------------------------------------------------------------------------------------
+🚀 Características principales
+Autenticación de usuarios con validación en backend
+Panel de administración para gestión de datos
+Interfaz web en HTML, CSS y JavaScript
+API REST desarrollada en Node.js con Express
+Conexión a base de datos MySQL
+Middleware de autenticación para proteger rutas
+---------------------------------------------------------------------------------------------------------------------------------
+📂 Estructura del proyecto
+
 
 Proyecto_Final_Nomina/
 │
@@ -67,95 +63,85 @@ Proyecto_Final_Nomina/
 │
 └── README.md # Documentación del proyecto
 ---------------------------------------------------------------------------------------------------------------------------------
-# ⚙️ Instalación y Configuración
 
-1️⃣ Clonar el repositorio
+🛠 Tecnologías utilizadas
 
-git clone https://github.com/EdwinArcangel/Proyecto_Final_Nomina.git
+Backend:
 
+Node.js
+Express.js
+MySQL (mysql2 o similar)
+dotenv (variables de entorno)
+Frontend:
 
-2️⃣ Backend
+HTML5
+CSS3
+Boostrap
+JavaScript
+Otros:
 
-* Ir a la carpeta backend/:
+Git y GitHub para control de versiones
+VS Code / IntelliJ IDEA como entornos recomendados
 
-* ejecutar comando:
-  cd backend npm install
-
-# Dependencias Backend:
-
-* npm install express mysql2 bcrypt jsonwebtoken cors dotenv
-
-* npm install --save-dev nodemon
-
-* Variables de entorno (.env)
-
-# Crear archivo .env en backend/:
-
-DB_HOST=localhost
-DB_USER=root
-DB_PASSWORD= '' password configurado 
-DB_NAME=nomina_db
-
-* Ejecutar servidor backend
-
-⚠️ Antes de iniciar, asegúrate de levantar MySQL:
-
-# Windows
-* net start mysql
-
-# Linux/Mac
-* sudo service mysql start
-
-
-Luego ejecutar:
- node server.js
-
-
-
-* Servidor disponible en: http://localhost:3000
-
-3️⃣ Frontend
-
-* Ir a la carpeta frontend/:
-
-* Ejecutar frontend: npm run dev
-
- Frontend disponible en:
- http://localhost:5173
 ---------------------------------------------------------------------------------------------------------------------------------
-📊 Módulos principales
 
-* Login y Autenticación
+📋 Requisitos previos
 
-* Dashboard con métricas de empleados, usuarios, pagos y novedades
+Antes de instalar el proyecto, asegúrate de tener instalado:
 
-* Gestión de Empleados  (CRUD con cargos relacionados)
+Requiere Node.js >= 22 (LTS) puede obtenerse fácilmente desde la página oficial https://nodejs.org/en
+Requiere el gestor de paquetes NPM que también puede ser obtenido desde la página oficial de Node.
+Requiere Base de Datos MariaDB >= 10.2 o MySQL >= 5.7
+---------------------------------------------------------------------------------------------------------------------------------
+------------------------## ⚙️ Instalación y configuración----------------------------------------------
 
-* Gestión de Usuarios 
+1. Clonar el repositorio
 
-* Gestión de Novedades 
+2. Desde la terminal ejecutar estos pasos
+    - 1 cd files
+    - 2 cd backend (ASEGURATE DE ESTAR EN LA CARPETA BACKEND PARA REALIZAR LOS SIGUIENTES PASOS)
+    - 3 npm install
+   
+    Configurar el backend
+    Crea el archivo .env con el siguiente contenido:
 
-* Gestión de Pagos 
+ - DB_HOST=localhost
+ - DB_USER=root
+ - DB_PASSWORD=tu_password
+ - DB_NAME=db.nomina
 
-* Reportes  exportables a Excel
+3. Iniciar el servidor
 
-# 🛠️ Scripts disponibles
-# Backend
-* npm run dev:  Levanta el servidor con nodemon
+ - Ejecutar el comando node server.js
+ - Al iniciar el servidor se crea automáticamente la base de datos nomina_db si no existe.
+ - También se generan tablas iniciales y registros de prueba (empleados y usuario).
 
-# Frontend
-* npm run dev: Levanta el frontend con Vite
+4. Abrir el frontend
 
-# 👨‍💻 Autor
+- Abre  la url http://localhost:5173/ en tu navegador.
+- El frontend se comunicará con el backend
 
-# Video de Funcionamiento
-https://vimeo.com/1114750546
+------------------------------------- VIDEO EXPLICATIVO DE INSTALACIÓN Y FUNCIONAMIENTO DEL SOFTWARE-----------------------------------------------------------------
 
-## 🧪 Pruebas con Postman
 
-archivo de coleccion en carpeta collection
+     https://vimeo.com/1114750546
+---------------------------------------------------------------------------------------------------------------------------------     
+🧑‍💻 Herramientas recomendadas para versionamiento y desarrollo
 
-[text](../../Downloads/collection.json)
+Git: Control de versiones
 
+GitHub: Repositorio remoto y colaboración
+
+Visual Studio Code: Editor ligero con integración Git
+
+IntelliJ IDEA: IDE con soporte completo para Node.js, Express y Git
+
+---------------------------------------------------------------------------------------------------------------------------------
+
+## 🧪Coleccion Apis Postman
+
+abrir el archivo  collection.json e importar en postman 
+
+---------------------------------------------------------------------------------------------------------------------------------
 Edwin Arcangel
 📌 Proyecto académico / Sistema de nómina
