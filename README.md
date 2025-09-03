@@ -96,11 +96,12 @@ Otros:
 - Requiere el gestor de paquetes NPM que también puede ser obtenido desde la página oficial de Node.
 - Requiere Base de Datos MariaDB >= 10.2 o MySQL >= 5.7
 
----------------------------------------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------
 
 ------------------## ⚙️ Instalación y configuración----------------------------------------------
 
 1. Clonar el repositorio
+- https://github.com/EdwinArcangel/Proyecto_Final_Nomina
 
 2. Desde la terminal ejecutar estos pasos
     - 1: cd backend
