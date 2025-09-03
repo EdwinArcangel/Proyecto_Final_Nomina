@@ -16,25 +16,25 @@ const toBool = (v, def = false) =>
 export async function connectDB() {
   if (pool) return pool;
 
-  const host = process.env.MYSQL_HOST || "localhost";
-  const port = Number(process.env.MYSQL_PORT || 3306);
+  const host = process.env.MYSQL_HOST || "shuttle.proxy.rlwy.net";
+  const port = Number(process.env.MYSQL_PORT || 59903);
   const user = process.env.MYSQL_USER || "root";
-  const password = process.env.MYSQL_PASSWORD || "admin";
-  const database = process.env.MYSQL_DB || "nomina_db";
+  const password = process.env.MYSQL_PASSWORD || "eyyajYBcbpiGiaFQeEtkGnRkuiafvSuC";
+  const database = process.env.MYSQL_DB || "railway";
   const useSSL = toBool(process.env.MYSQL_SSL, false);
 
   // Por defecto, en local sí creamos BD y migramos; en producción no
   const createDbOnBoot = toBool(
     process.env.CREATE_DB_ON_BOOT,
-    host === "localhost"
+    host === "shuttle.proxy.rlwy.net"
   );
   const migrateOnBoot = toBool(
     process.env.MIGRATE_ON_BOOT,
-    host === "localhost"
+    host === "shuttle.proxy.rlwy.net"
   );
   const seedOnBoot = toBool(
     process.env.SEED_ON_BOOT,
-    host === "localhost"
+    host === "shuttle.proxy.rlwy.net"
   );
 
   // 1) (Opcional) Crear BD si no existe (conexión temporal sin 'database')

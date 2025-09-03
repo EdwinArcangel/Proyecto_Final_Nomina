@@ -6,7 +6,7 @@ import "react-toastify/dist/ReactToastify.css";
 
 // Importación de páginas
 import Login from "./login";
-import Home from "./home/home";
+import Home from "./home/Home";
 import ShowEmployees from "./employees/ShowEmployees";
 import ShowUsers from "./users/ShowUsers";
 import ShowNovedades from "./novedades/ShowNovedades";
