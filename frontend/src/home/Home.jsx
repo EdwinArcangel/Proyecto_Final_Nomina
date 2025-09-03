@@ -18,14 +18,15 @@ export default function Home() {
     ultimoPago: null,
     novedadesPendientes: 0,
     novedadesAprobadas: 0,
-    
   });
+  const [pagosMensuales, setPagosMensuales] = useState([]);
+  const [empleadosPorCargo, setEmpleadosPorCargo] = useState([]);
   const [loading, setLoading] = useState(false);
 
   const fetchDashboard = async () => {
     try {
       setLoading(true);
-      const res = await api.get("/dashboard"); //
+      const res = await api.get("/dashboard");
       setStats(res.data);
     } catch (err) {
       console.error("Error cargando dashboard:", err);
@@ -34,8 +35,28 @@ export default function Home() {
     }
   };
 
+  const fetchPagosMensuales = async () => {
+    try {
+      const res = await api.get("/dashboard/pagos-mensuales");
+      setPagosMensuales(res.data);
+    } catch (err) {
+      console.error("Error cargando pagos mensuales:", err);
+    }
+  };
+
+  const fetchEmpleadosPorCargo = async () => {
+    try {
+      const res = await api.get("/dashboard/empleados-por-cargo");
+      setEmpleadosPorCargo(res.data);
+    } catch (err) {
+      console.error("Error cargando empleados por cargo:", err);
+    }
+  };
+
   useEffect(() => {
     fetchDashboard();
+    fetchPagosMensuales();
+    fetchEmpleadosPorCargo();
   }, []);
 
   const handleLogout = () => {
@@ -45,19 +66,6 @@ export default function Home() {
 
   const formatCurrency = (v) =>
     new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP" }).format(v || 0);
-
-  // Datos ficticios (puedes cambiarlos a datos reales del backend luego)
-  const pagosMensuales = [
-    { mes: "Ene", total: 1200000 },
-    { mes: "Feb", total: 1500000 },
-    { mes: "Mar", total: 1800000 },
-  ];
-
-  const empleadosPorCargo = [
-    { cargo: "Desarrollador", total: 8 },
-    { cargo: "QA", total: 5 },
-    { cargo: "Admin", total: 2 },
-  ];
 
   const COLORS = ["#4facfe", "#00f2fe", "#34d399", "#facc15", "#f87171"];
 
@@ -75,13 +83,12 @@ export default function Home() {
           <li style={styles.menuItem} onClick={() => navigate("/usuarios")}>🧑‍💻 Usuarios</li>
           <li style={styles.menuItem} onClick={() => navigate("/novedades")}>📌 Novedades</li>
           <li style={styles.menuItem} onClick={() => navigate("/pagos")}>💰 Pagos</li>
-          <li style={styles.menuItem}onClick={() =>  navigate("/reportes")}>📑 Reportes</li>
+          <li style={styles.menuItem} onClick={() => navigate("/reportes")}>📑 Reportes</li>
         </ul>
       </aside>
 
       {/* Main */}
       <div style={styles.main}>
-        {/* Navbar */}
         <nav style={styles.navbar}>
           <span>SISTEMA DE NÓMINA</span>
           <button style={styles.logoutBtn} onClick={handleLogout}>
@@ -109,11 +116,11 @@ export default function Home() {
             </div>
             <div style={{ ...styles.card, background: "#8bc34a", color: "white" }}>
               <h3>✅ Novedades aprobadas</h3>
-                <p>Total registrados:{stats.novedadesAprobadas}</p>
+              <p>Total registrados: <strong>{stats.novedadesAprobadas}</strong></p>
             </div>
           </div>
 
-          {/* Gráficas */}
+          {/* Charts */}
           <div style={styles.charts}>
             <div style={styles.chartBox}>
               <h3>💵 Pagos por Mes</h3>
@@ -122,7 +129,7 @@ export default function Home() {
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="mes" />
                   <YAxis />
-                  <Tooltip />
+                  <Tooltip formatter={(value) => formatCurrency(value)} />
                   <Bar dataKey="total" fill="#4facfe" />
                 </BarChart>
               </ResponsiveContainer>
@@ -130,23 +137,31 @@ export default function Home() {
 
             <div style={styles.chartBox}>
               <h3>👥 Empleados por Cargo</h3>
-              <ResponsiveContainer width="100%" height={250}>
-                <PieChart>
-                  <Pie
-                    data={empleadosPorCargo}
-                    dataKey="total"
-                    nameKey="cargo"
-                    outerRadius={100}
-                    label
-                  >
-                    {empleadosPorCargo.map((_, i) => (
-                      <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                  <Legend />
-                </PieChart>
-              </ResponsiveContainer>
+              {empleadosPorCargo.filter(c => c.total > 0).length > 0 ? (
+                <ResponsiveContainer width="100%" height={250}>
+                  <PieChart>
+                    <Pie
+                      data={empleadosPorCargo.filter(c => c.total > 0)}
+                      dataKey="total"
+                      nameKey="cargo"
+                      outerRadius={100}
+                      label
+                    >
+                      {empleadosPorCargo
+                        .filter(c => c.total > 0)
+                        .map((_, i) => (
+                          <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                        ))}
+                    </Pie>
+                    <Tooltip />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                <p style={{ textAlign: "center", marginTop: "2rem" }}>
+                  No hay empleados registrados en cargos
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -158,23 +173,32 @@ export default function Home() {
 const styles = {
   layout: { display: "flex", height: "100vh", fontFamily: "Arial, sans-serif" },
   sidebar: {
-    width: "220px",
+    width: "240px", // más ancho
     background: "linear-gradient(180deg, #4facfe, #00f2fe)",
     color: "white",
     padding: "1rem",
     textAlign: "center",
   },
   logoWrapper: {
-    width: "100px", height: "100px", borderRadius: "50%", backgroundColor: "white",
+    width: "120px", height: "120px", borderRadius: "50%", backgroundColor: "white",
     display: "flex", justifyContent: "center", alignItems: "center",
-    margin: "0 auto 0.5rem auto", boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
+    margin: "0 auto 0.8rem auto", boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
   },
-  logoImg: { width: "60px" },
-  logoText: { fontSize: "1.2rem", fontWeight: "bold", margin: "1rem 0" },
-  menu: { listStyle: "none", padding: 0 },
+  logoImg: { width: "70px" },
+  logoText: { fontSize: "1.4rem", fontWeight: "bold", margin: "1rem 0" },
+  menu: { listStyle: "none", padding: 0, marginTop: "1rem" },
   menuItem: {
-    padding: "0.8rem", margin: "0.3rem 0", borderRadius: "8px",
-    cursor: "pointer", background: "rgba(255,255,255,0.1)",
+    padding: "1rem",           // más grande
+    margin: "0.6rem 0",
+    borderRadius: "12px",
+    cursor: "pointer",
+    background: "rgba(255,255,255,0.15)",
+    fontSize: "1.1rem",        // texto más grande
+    fontWeight: "500",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    transition: "all 0.2s ease-in-out",
   },
   main: { flex: 1, background: "#f4f6f9", display: "flex", flexDirection: "column", color: "#333" },
   navbar: {
@@ -183,7 +207,7 @@ const styles = {
     borderBottom: "1px solid #ddd",
   },
   logoutBtn: {
-    padding: "0.5rem 1rem", border: "none", borderRadius: "6px",
+    padding: "0.6rem 1.2rem", border: "none", borderRadius: "8px",
     background: "#ff4d4d", color: "white", fontWeight: "bold", cursor: "pointer",
   },
   dashboard: { padding: "2rem" },

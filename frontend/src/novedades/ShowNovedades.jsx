@@ -10,7 +10,7 @@ export default function ShowNovedades() {
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState({
-    empleado_id: "",
+    nombre_empleado: "",
     tipo: "incapacidad",
     descripcion: "",
     fecha_inicio: "",
@@ -61,7 +61,7 @@ export default function ShowNovedades() {
       setShowForm(false);
       setEditing(null);
       setForm({
-        empleado_id: "",
+        nombre_empleado: "",
         tipo: "incapacidad",
         descripcion: "",
         fecha_inicio: "",
@@ -125,7 +125,7 @@ export default function ShowNovedades() {
               novedades.map((n) => (
                 <tr key={n.id}>
                   <td style={styles.td}>{n.id}</td>
-                  <td style={styles.td}>{n.empleado}</td>
+                  <td style={styles.td}>{n.nombre_empleado}</td>
                   <td style={styles.td}>{n.tipo}</td>
                   <td style={styles.td}>{n.descripcion}</td>
                   <td style={styles.td}>{n.fecha_inicio}</td>
@@ -137,7 +137,7 @@ export default function ShowNovedades() {
                       onClick={() => {
                         setEditing(n);
                         setForm({
-                          empleado_id: n.empleado_id,
+                          nombre_empleado: n.nombre_empleado,
                           tipo: n.tipo,
                           descripcion: n.descripcion,
                           fecha_inicio: n.fecha_inicio,
@@ -179,13 +179,15 @@ export default function ShowNovedades() {
             <form onSubmit={handleSubmit} style={styles.form}>
               <select
                 style={styles.input}
-                value={form.empleado_id}
-                onChange={(e) => setForm({ ...form, empleado_id: e.target.value })}
+                value={form.nombre_empleado}
+                onChange={(e) =>
+                  setForm({ ...form, nombre_empleado: e.target.value })
+                }
                 required
               >
                 <option value="">Seleccione Empleado</option>
                 {empleados.map((emp) => (
-                  <option key={emp.id} value={emp.id}>
+                  <option key={emp.id} value={emp.nombre_empleado}>
                     {emp.nombre_empleado}
                   </option>
                 ))}
@@ -209,14 +211,18 @@ export default function ShowNovedades() {
                 style={styles.input}
                 placeholder="Descripción"
                 value={form.descripcion}
-                onChange={(e) => setForm({ ...form, descripcion: e.target.value })}
+                onChange={(e) =>
+                  setForm({ ...form, descripcion: e.target.value })
+                }
               />
 
               <input
                 style={styles.input}
                 type="date"
                 value={form.fecha_inicio}
-                onChange={(e) => setForm({ ...form, fecha_inicio: e.target.value })}
+                onChange={(e) =>
+                  setForm({ ...form, fecha_inicio: e.target.value })
+                }
                 required
               />
 
@@ -224,7 +230,9 @@ export default function ShowNovedades() {
                 style={styles.input}
                 type="date"
                 value={form.fecha_fin}
-                onChange={(e) => setForm({ ...form, fecha_fin: e.target.value })}
+                onChange={(e) =>
+                  setForm({ ...form, fecha_fin: e.target.value })
+                }
               />
 
               <select
@@ -259,18 +267,79 @@ export default function ShowNovedades() {
 
 const styles = {
   container: { padding: "2rem", background: "#f4f6f9", minHeight: "100vh" },
-  header: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" },
+  header: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: "1rem",
+  },
   title: { flex: 1, textAlign: "center", color: "#4b0082", margin: 0 },
-  addBtn: { padding: "0.6rem 1rem", border: "none", borderRadius: "6px", background: "#4facfe", color: "white", cursor: "pointer", fontWeight: "bold" },
-  table: { width: "100%", borderCollapse: "collapse", background: "white" },
+  addBtn: {
+    padding: "0.6rem 1rem",
+    border: "none",
+    borderRadius: "6px",
+    background: "#4facfe",
+    color: "white",
+    cursor: "pointer",
+    fontWeight: "bold",
+  },
+  table: {
+    width: "100%",
+    borderCollapse: "collapse",
+    background: "white",
+  },
   thead: { background: "#f5f6ff" },
   th: { textAlign: "center", padding: "0.8rem", color: "#333", fontWeight: 600 },
-  td: { textAlign: "center", padding: "0.8rem", borderBottom: "1px solid #eee", color: "#333" },
-  editBtn: { marginRight: "0.5rem", padding: "0.4rem 0.8rem", border: "none", borderRadius: "6px", background: "#facc15", cursor: "pointer" },
-  deleteBtn: { padding: "0.4rem 0.8rem", border: "none", borderRadius: "6px", background: "#f87171", color: "white", cursor: "pointer" },
-  modalOverlay: { position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh", background: "rgba(0,0,0,0.5)", display: "flex", justifyContent: "center", alignItems: "center" },
-  modal: { background: "white", padding: "2rem", borderRadius: "12px", width: "400px", textAlign: "center" },
-  form: { display: "flex", flexDirection: "column", gap: "1rem", marginTop: "1rem" },
+  td: {
+    textAlign: "center",
+    padding: "0.8rem",
+    borderBottom: "1px solid #eee",
+    color: "#333",
+  },
+  editBtn: {
+    marginRight: "0.5rem",
+    padding: "0.4rem 0.8rem",
+    border: "none",
+    borderRadius: "6px",
+    background: "#facc15",
+    cursor: "pointer",
+  },
+  deleteBtn: {
+    padding: "0.4rem 0.8rem",
+    border: "none",
+    borderRadius: "6px",
+    background: "#f87171",
+    color: "white",
+    cursor: "pointer",
+  },
+  modalOverlay: {
+    position: "fixed",
+    top: 0,
+    left: 0,
+    width: "100vw",
+    height: "100vh",
+    background: "rgba(0,0,0,0.5)",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modal: {
+    background: "white",
+    padding: "2rem",
+    borderRadius: "12px",
+    width: "400px",
+    textAlign: "center",
+  },
+  form: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "1rem",
+    marginTop: "1rem",
+  },
   input: { padding: "0.8rem", border: "1px solid #ccc", borderRadius: "6px" },
-  modalActions: { display: "flex", justifyContent: "space-between", marginTop: "1rem" },
+  modalActions: {
+    display: "flex",
+    justifyContent: "space-between",
+    marginTop: "1rem",
+  },
 };

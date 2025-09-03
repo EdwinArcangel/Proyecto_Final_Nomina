@@ -194,7 +194,7 @@ async function runMigrations(pool) {
    SEEDS (admin + datos demo)
    ========================= */
 async function runSeeds(pool) {
-  // Admin por defecto
+  // Admin
   const [users] = await pool.query(
     "SELECT id FROM usuarios WHERE email = ?",
     ["admin@nomina.com"]
@@ -205,9 +205,7 @@ async function runSeeds(pool) {
       "INSERT INTO usuarios (nombre_usuario, email, password, rol) VALUES (?, ?, ?, ?)",
       ["Administrador", "admin@nomina.com", hashed, "admin"]
     );
-    console.log("✅ Usuario administrador creado: admin@nomina.com / admin123");
-  } else {
-    console.log("⚡ Usuario administrador ya existe");
+    console.log("Usuario administrador creado");
   }
 
   // Departamentos
@@ -216,14 +214,21 @@ async function runSeeds(pool) {
   );
   if (depCount === 0) {
     await pool.query(
-      "INSERT INTO departamentos (nombre, descripcion) VALUES (?, ?), (?, ?), (?, ?)",
-      [
-        "TI", "Tecnología e innovación",
-        "Recursos Humanos", "Gestión de personal",
-        "Finanzas", "Administración financiera",
-      ]
+      `INSERT INTO departamentos (nombre, descripcion) VALUES
+        ('TI', 'Tecnología e innovación'),
+        ('Recursos Humanos', 'Gestión de personal'),
+        ('Finanzas', 'Administración financiera'),
+        ('Administración', 'Gestión administrativa y soporte'),
+        ('Comercial', 'Fuerza de ventas y atención a clientes'),
+        ('Marketing', 'Publicidad y posicionamiento de marca'),
+        ('Operaciones', 'Producción y prestación de servicios'),
+        ('Logística', 'Compras, transporte e inventarios'),
+        ('Legal', 'Asuntos jurídicos y normativos'),
+        ('Calidad', 'Control y mejora continua'),
+        ('Mantenimiento', 'Infraestructura y soporte técnico'),
+        ('Innovación', 'Investigación y desarrollo')`
     );
-    console.log("✅ Departamentos de prueba insertados");
+    console.log("Departamentos de prueba insertados");
   }
 
   // Cargos
@@ -232,15 +237,13 @@ async function runSeeds(pool) {
   );
   if (cargoCount === 0) {
     await pool.query(
-      "INSERT INTO cargos (nombre, salario_base, departamento_id) VALUES (?, ?, ?), (?, ?, ?), (?, ?, ?), (?, ?, ?)",
-      [
-        "Desarrollador", 4500000, 1,
-        "Analista QA", 3800000, 1,
-        "Project Manager", 6000000, 1,
-        "Contador", 5000000, 3,
-      ]
+      `INSERT INTO cargos (nombre, salario_base, departamento_id) VALUES 
+        ('Desarrollador', 4500000, 1),
+        ('Analista QA', 3800000, 1),
+        ('Project Manager', 6000000, 1),
+        ('Contador', 5000000, 3)`
     );
-    console.log("✅ Cargos de prueba insertados");
+    console.log(" Cargos de prueba insertados");
   }
 
   // Empleados
@@ -252,19 +255,14 @@ async function runSeeds(pool) {
       `INSERT INTO empleados
         (nombre_empleado, documento, email, telefono, direccion, fecha_ingreso, estado, cargo_id, salario_base, eps, pension, arl)
        VALUES
-        (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?),
-        (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?),
-        (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        "Ana Torres", "CC123", "ana@empresa.com", "3001234567", "Calle 123", "2022-01-15", "activo", 1, 4500000, "Sura", "Protección", "Colmena",
-        "Juan Pérez", "CC124", "juan@empresa.com", "3109876543", "Carrera 45", "2023-02-20", "activo", 2, 3800000, "Sanitas", "Porvenir", "Positiva",
-        "María Gómez", "CC125", "maria@empresa.com", "3204567890", "Av. Siempre Viva", "2021-07-01", "activo", 3, 6000000, "Coomeva", "Colpensiones", "Bolívar",
-      ]
+        ('Ana Torres', 'CC123', 'ana@empresa.com', '3001234567', 'Calle 123', '2022-01-15', 'activo', 1, 4500000, 'Sura', 'Protección', 'Colmena'),
+        ('Juan Pérez', 'CC124', 'juan@empresa.com', '3109876543', 'Carrera 45', '2023-02-20', 'activo', 2, 3800000, 'Sanitas', 'Porvenir', 'Positiva'),
+        ('María Gómez', 'CC125', 'maria@empresa.com', '3204567890', 'Av. Siempre Viva', '2021-07-01', 'activo', 3, 6000000, 'Coomeva', 'Colpensiones', 'Bolívar')`
     );
-    console.log("✅ Empleados de prueba insertados");
+    console.log("Empleados de prueba insertados");
   }
 
-  // Periodo de nómina (ejemplo)
+  // Periodo de nómina
   const [[{ total: perCount }]] = await pool.query(
     "SELECT COUNT(*) AS total FROM periodos_nomina"
   );
@@ -273,6 +271,6 @@ async function runSeeds(pool) {
       "INSERT INTO periodos_nomina (fecha_inicio, fecha_fin, estado) VALUES (?, ?, ?)",
       ["2025-08-01", "2025-08-31", "abierto"]
     );
-    console.log("✅ Periodo de nómina de prueba creado (Agosto 2025)");
+    console.log("Periodo de nómina creado");
   }
 }

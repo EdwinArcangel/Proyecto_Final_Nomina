@@ -4,10 +4,15 @@ import { connection } from "../config/db.js";
 
 const router = express.Router();
 
+// ==============================
+// Dashboard principal (estadísticas generales)
+// ==============================
 router.get("/", async (req, res) => {
   try {
     // Total empleados
-    const [empleados] = await connection.query("SELECT COUNT(*) AS total FROM empleados");
+    const [empleados] = await connection.query(
+      "SELECT COUNT(*) AS total FROM empleados"
+    );
 
     // Total usuarios con rol empleado
     const [usuarios] = await connection.query(
@@ -47,8 +52,8 @@ router.get("/", async (req, res) => {
 
     res.json({
       empleados: empleados[0].total,
-      usuarios: usuarios[0].total, 
-      admins: admins[0].total, 
+      usuarios: usuarios[0].total,
+      admins: admins[0].total,
       pagosMes: pagosMes[0].total || 0,
       ultimoPago: ultimoPago[0]?.fecha_pago || null,
       novedadesPendientes: novedadesPendientes[0].total,
@@ -58,8 +63,12 @@ router.get("/", async (req, res) => {
     console.error("❌ Error cargando dashboard:", err.message);
     res.status(500).json({ error: "Error al cargar dashboard" });
   }
+});
 
-  router.get("/pagos-mensuales", async (req, res) => {
+// ==============================
+// Pagos por mes (últimos 12 meses)
+// ==============================
+router.get("/pagos-mensuales", async (req, res) => {
   try {
     const [rows] = await connection.query(`
       SELECT 
@@ -78,6 +87,27 @@ router.get("/", async (req, res) => {
     res.status(500).json({ error: "Error al cargar pagos mensuales" });
   }
 });
+
+// ==============================
+// Empleados por cargo
+// ==============================
+router.get("/empleados-por-cargo", async (req, res) => {
+  try {
+    const [rows] = await connection.query(`
+      SELECT 
+        c.nombre AS cargo,
+        COUNT(e.id) AS total
+      FROM cargos c
+      LEFT JOIN empleados e ON e.cargo_id = c.id
+      GROUP BY c.id, c.nombre
+      ORDER BY total DESC
+    `);
+
+    res.json(rows);
+  } catch (err) {
+    console.error("❌ Error cargando empleados por cargo:", err.message);
+    res.status(500).json({ error: "Error al cargar empleados por cargo" });
+  }
 });
 
 export default router;
