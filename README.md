@@ -1,161 +1,111 @@
+📌 E-Nómina
 
-# E -Nomina
-Sistema de gestión de nómina desarrollado con Node.js + Express + MySQL en el backend y React + Vite en el frontend.
-Incluye módulos de empleados, usuarios, novedades, pagos y reportes, con autenticación mediante JWT.
-Proyecto Final Nómina
+Presentado por:
+✦ Edwin Arcangel
 
----------------------------------------------------------------------------------------------------------------------------------
-# 🚀 Tecnologías usadas
+Aplicación web con frontend y backend separados, diseñada para gestionar el proceso de nómina en una empresa.
+Incluye autenticación, panel de administración, gestión de empleados, usuarios, novedades, pagos y reportes exportables.
 
-* Backend
-* Node.js
-* Express
-* MySQL2
-* Bcrypt
-* JSON Web Token (JWT)
-  
- * ORS
-  
-  * Dotenv
-  
-  * Nodemon (dev)
+🌐 Proyecto desplegado en la nube
 
-* Frontend
-  
- * React
-  
- * React Router DOM 
-  
-  * Axios
-  
-  * React Toastify
-  
- * Recharts
+🖥️ Backend + Frontend:
+👉 (Aquí puedes poner el link de Render/Netlify si ya lo tienes desplegado)
 
-  * Vite
+📽️ Video de funcionamiento
 
----------------------------------------------------------------------------------------------------------------------------------
+👉 Ver en Vimeo
 
+🚀 Características principales
+
+🔐 Autenticación de usuarios con JWT
+
+📊 Panel de control con métricas (empleados, pagos, novedades, usuarios)
+
+👥 Gestión de Empleados (CRUD con cargos/departamentos relacionados)
+
+🧑‍💻 Gestión de Usuarios
+
+📌 Registro y gestión de Novedades (vacaciones, incapacidades, bonificaciones, etc.)
+
+💰 Gestión de Pagos por periodos de nómina
+
+📑 Generación de reportes exportables
+
+📂 Estructura del proyecto
 Proyecto_Final_Nomina/
 │
-├── backend/ # Lógica del servidor (Node.js + Express)
-│ ├── config/
-│ │ └── db.js # Conexión a MySQL y creación automática de tablas
-│ │
-│ ├── routes/ # Rutas del backend (APIs REST)
-│ │ ├── auth.js # Login con JWT
-│ │ ├── empleados.js # CRUD de empleados
-│ │ ├── usuarios.js # CRUD de usuarios
-│ │ ├── novedades.js # CRUD de novedades
-│ │ ├── pagos.js # CRUD de pagos
-│ │ ├── cargos.js # CRUD de cargos
-│ │ └── dashboard.js # Datos para el panel de control
-│ │
-│ └── server.js # Punto de entrada del backend
+├── backend/                                  # Lógica y API del servidor
+│   ├── server.js                             # Punto de entrada
+│   ├── config/db.js                          # Conexión a la base de datos + migraciones
+│   ├── routes/                               # Rutas del backend
+│   │   ├── auth.js                           # Autenticación
+│   │   ├── empleados.js                      # Gestión empleados
+│   │   ├── usuarios.js                       # Gestión usuarios
+│   │   ├── novedades.js                      # Gestión novedades
+│   │   ├── pagos.js                          # Gestión pagos
+│   │   ├── cargos.js                         # Gestión cargos
+│   │   └── dashboard.js                      # Datos para panel
+│   └── package.json                          # Dependencias backend
 │
-├── frontend/ # Aplicación cliente (React + Vite)
-│ └── src/
-│ ├── home/ # Dashboard principal
-│ ├── employees/ # Gestión de empleados
-│ ├── users/ # Gestión de usuarios
-│ ├── novedades/ # Gestión de novedades
-│ ├── payments/ # Gestión de pagos
-│ ├── reportes/ # Reportes en Excel/PDF
-│ ├── utils/ # Configuración de API (axios, helpers, etc.)
-│ ├── App.jsx # Rutas protegidas con React Router
-│ └── index.html
+├── frontend/                                 # Aplicación cliente (React + Vite)
+│   ├── src/
+│   │   ├── home/                             # Dashboard
+│   │   ├── employees/                        # Módulo empleados
+│   │   ├── users/                            # Módulo usuarios
+│   │   ├── novedades/                        # Módulo novedades
+│   │   ├── payments/                         # Módulo pagos
+│   │   ├── reportes/                         # Exportación de reportes
+│   │   ├── utils/                            # Config API (axios, helpers)
+│   │   ├── App.jsx                           # Rutas protegidas
+│   │   └── index.html
+│   └── package.json                          # Dependencias frontend
 │
-└── README.md # Documentación del proyecto
----------------------------------------------------------------------------------------------------------------------------------
-# ⚙️ Instalación y Configuración
+└── README.md                                 # Documentación
 
-1️⃣ Clonar el repositorio
+🛠 Tecnologías utilizadas
 
-git clone https://github.com/EdwinArcangel/Proyecto_Final_Nomina.git
+Backend:
 
+Node.js + Express.js
 
-2️⃣ Backend
+MySQL (MySQL2)
 
-* Ir a la carpeta backend/:
+JWT (Autenticación)
 
-* ejecutar comando:
-  cd backend npm install
+Bcrypt (Hash de contraseñas)
 
-# Dependencias Backend:
+Dotenv (Variables de entorno)
 
-* npm install express mysql2 bcrypt jsonwebtoken cors dotenv
+Cors
 
-* npm install --save-dev nodemon
+Nodemon (dev)
 
-* Variables de entorno (.env)
+Frontend:
 
-# Crear archivo .env en backend/:
+React + Vite
 
-DB_HOST=localhost
-DB_USER=root
-DB_PASSWORD= '' password configurado 
-DB_NAME=nomina_db
+React Router DOM
 
-* Ejecutar servidor backend
+Axios
 
-⚠️ Antes de iniciar, asegúrate de levantar MySQL:
+React Toastify
 
-# Windows
-* net start mysql
+Recharts
 
-# Linux/Mac
-* sudo service mysql start
+Otros:
 
+Git y GitHub (control de versiones)
 
-Luego ejecutar:
- node server.js
+Railway (Base de datos en la nube)
 
+Render / Netlify (Despliegue)
 
+📋 Requisitos previos
 
-* Servidor disponible en: http://localhost:3000
+Antes de instalar el proyecto, asegúrate de tener:
 
-3️⃣ Frontend
+Node.js >= 18 (LTS) 👉 descargar aquí
 
-* Ir a la carpeta frontend/:
+NPM (incluido en Node.js)
 
-* Ejecutar frontend: npm run dev
-
- Frontend disponible en:
- http://localhost:5173
----------------------------------------------------------------------------------------------------------------------------------
-📊 Módulos principales
-
-* Login y Autenticación
-
-* Dashboard con métricas de empleados, usuarios, pagos y novedades
-
-* Gestión de Empleados  (CRUD con cargos relacionados)
-
-* Gestión de Usuarios 
-
-* Gestión de Novedades 
-
-* Gestión de Pagos 
-
-* Reportes  exportables a Excel
-
-# 🛠️ Scripts disponibles
-# Backend
-* npm run dev:  Levanta el servidor con nodemon
-
-# Frontend
-* npm run dev: Levanta el frontend con Vite
-
-# 👨‍💻 Autor
-
-# Video de Funcionamiento
-https://vimeo.com/1114750546
-
-## 🧪 Pruebas con Postman
-
-archivo de coleccion en carpeta collection
-
-[text](../../Downloads/collection.json)
-
-Edwin Arcangel
-📌 Proyecto académico / Sistema de nómina
+MySQL >= 5.7 o MariaDB >= 10.2
