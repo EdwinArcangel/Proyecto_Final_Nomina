@@ -2,8 +2,8 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import api, { AUTH_PATH } from "./utils/api";
-import FaUser from "react-icons/fa/FaUser";
-import FaLock from "react-icons/fa/FaLock";
+import { FaUser, FaLock } from "react-icons/fa";
+
 
 const Login = ({ onLoginSuccess }) => {
   const [email, setEmail] = useState("");
