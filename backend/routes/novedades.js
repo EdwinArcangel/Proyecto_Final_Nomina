@@ -1,11 +1,10 @@
-// routes/novedades.js
 import express from "express";
 import { connection } from "../config/db.js";
 
 const router = express.Router();
 
 // ==============================
-// Listar todas las novedades (con nombre_empleado)
+// Listar todas las novedades (con nombre_empleado vía JOIN)
 // ==============================
 router.get("/", async (req, res) => {
   try {
@@ -13,7 +12,7 @@ router.get("/", async (req, res) => {
       SELECT 
         n.id,
         n.empleado_id,
-        n.nombre_empleado,
+        e.nombre_empleado,
         n.tipo,
         n.descripcion,
         n.fecha_inicio,
@@ -23,6 +22,7 @@ router.get("/", async (req, res) => {
         n.aprobado_por,
         n.fecha_registro
       FROM novedades n
+      INNER JOIN empleados e ON n.empleado_id = e.id
     `);
     res.json(rows);
   } catch (err) {
@@ -32,7 +32,7 @@ router.get("/", async (req, res) => {
 });
 
 // ==============================
-// Crear una novedad (usando nombre_empleado)
+// Crear una novedad (buscando empleado por nombre)
 // ==============================
 router.post("/", async (req, res) => {
   try {
@@ -71,11 +71,10 @@ router.post("/", async (req, res) => {
     // Insertar novedad
     await connection.query(
       `INSERT INTO novedades 
-        (empleado_id, nombre_empleado, tipo, descripcion, fecha_inicio, fecha_fin, monto, estado, aprobado_por) 
-       VALUES (?,?,?,?,?,?,?,?,?)`,
+        (empleado_id, tipo, descripcion, fecha_inicio, fecha_fin, monto, estado, aprobado_por) 
+       VALUES (?,?,?,?,?,?,?,?)`,
       [
         empleado_id,
-        nombre_empleado,
         tipo,
         descripcion,
         fecha_inicio,
@@ -94,7 +93,7 @@ router.post("/", async (req, res) => {
 });
 
 // ==============================
-// Actualizar novedad (usando nombre_empleado)
+// Actualizar novedad (buscando empleado por nombre)
 // ==============================
 router.put("/:id", async (req, res) => {
   try {
@@ -132,11 +131,10 @@ router.put("/:id", async (req, res) => {
     // Actualizar novedad
     await connection.query(
       `UPDATE novedades 
-       SET empleado_id=?, nombre_empleado=?, tipo=?, descripcion=?, fecha_inicio=?, fecha_fin=?, monto=?, estado=?, aprobado_por=? 
+       SET empleado_id=?, tipo=?, descripcion=?, fecha_inicio=?, fecha_fin=?, monto=?, estado=?, aprobado_por=? 
        WHERE id=?`,
       [
         empleado_id,
-        nombre_empleado,
         tipo,
         descripcion,
         fecha_inicio,
