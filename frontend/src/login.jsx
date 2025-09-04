@@ -18,9 +18,17 @@ const Login = ({ onLoginSuccess }) => {
       });
 
       if (response.data.token) {
+        // Guardar token en localStorage
         localStorage.setItem("token", response.data.token);
-        onLoginSuccess(response.data.token, { email });
-        navigate("/home"); // ✅ corregido: redirige al home
+
+        // Guardar usuario completo en localStorage (opcional)
+        localStorage.setItem("usuario", JSON.stringify(response.data.usuario));
+
+        // Pasar token y usuario a la app principal
+        onLoginSuccess(response.data.token, response.data.usuario);
+
+        // Redirigir al home
+        navigate("/home");
       }
     } catch (error) {
       setMessage(

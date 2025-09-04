@@ -1,7 +1,7 @@
 import express from "express";
+import db from "../config/db.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import { connection } from "../config/db.js"; 
 
 const router = express.Router();
 
@@ -11,44 +11,39 @@ router.post("/login", async (req, res) => {
 
   try {
     // Buscar usuario por email
-    const [rows] = await connection.query(
-      "SELECT * FROM usuarios WHERE email = ?",
-      [email]
-    );
-
+    const [rows] = await db.query("SELECT * FROM usuarios WHERE email = ?", [email]);
     if (rows.length === 0) {
       return res.status(401).json({ message: "Usuario no encontrado" });
     }
 
     const usuario = rows[0];
 
-    // Comparar contraseña con bcrypt
+    // Validar contraseña
     const validPassword = await bcrypt.compare(password, usuario.password);
     if (!validPassword) {
       return res.status(401).json({ message: "Contraseña incorrecta" });
     }
 
-    // Crear token JWT
+    // Crear token
     const token = jwt.sign(
       { id: usuario.id, rol: usuario.rol },
-      "mi_secreto", // 
+      "mi_secreto",
       { expiresIn: "1h" }
     );
 
-    // Respuesta exitosa
-res.json({
-  message: "Login exitoso",
-  token,
-  usuario: {
-    id: usuario.id,
-    nombre: usuario.nombre_usuario,
-    email: usuario.email,
-    rol: usuario.rol,
-  }
-});
-
+    // Devolver token y datos del usuario
+    res.json({
+      message: "Login exitoso",
+      token,
+      usuario: {
+        id: usuario.id,
+        nombre_usuario: usuario.nombre_usuario,
+        email: usuario.email,
+        rol: usuario.rol,
+      },
+    });
   } catch (error) {
-    console.error("❌ Error en el servidor:", error);
+    console.error("Error en login:", error);
     res.status(500).json({ message: "Error en el servidor" });
   }
 });

@@ -12,7 +12,7 @@ Incluye autenticación, panel de administración, gestión de empleados, usuario
 ----------------------------NOTA----------------------------------------------
 
 EL SIGUIENTE ES EL LINK DEL PROYECTO DESPLEGADO EN LA NUBE:
-
+    https://proyecto-final-nomina.vercel.app/login
     
 ---------------------------------------------------------------------------------------------------------------------------------
 🚀 Características principales 
