@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api, { AUTH_PATH } from "./utils/api";
-import logo from "./assets/logo_nomina";
+import logo from "./assets/logo_nomina.png";
 
 const Login = ({ onLoginSuccess }) => {
   const [email, setEmail] = useState("");
