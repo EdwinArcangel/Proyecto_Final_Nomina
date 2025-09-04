@@ -3,6 +3,9 @@ import { connection } from "../config/db.js";
 
 const router = express.Router();
 
+// ==============================
+// Listar todas las novedades con nombre del empleado
+// ==============================
 router.get("/", async (req, res) => {
   try {
     const [rows] = await connection.query(`
@@ -19,7 +22,7 @@ router.get("/", async (req, res) => {
         n.aprobado_por,
         n.fecha_registro
       FROM novedades n
-      INNER JOIN empleados e ON n.empleado_id = e.id
+      LEFT JOIN empleados e ON n.empleado_id = e.id
     `);
     res.json(rows);
   } catch (err) {
@@ -28,12 +31,11 @@ router.get("/", async (req, res) => {
   }
 });
 
-
+// ==============================
 // Crear una novedad
+// ==============================
 router.post("/", async (req, res) => {
   try {
-    console.log("📩 Body recibido:", req.body);
-
     const {
       nombre_empleado,
       tipo,
@@ -52,14 +54,13 @@ router.post("/", async (req, res) => {
       });
     }
 
-    // Buscar el ID del empleado por nombre
+    // Buscar ID del empleado por nombre
     const [empleado] = await connection.query(
       "SELECT id FROM empleados WHERE nombre_empleado = ?",
       [nombre_empleado]
     );
 
     if (empleado.length === 0) {
-      console.warn("⚠️ Empleado no encontrado:", nombre_empleado);
       return res.status(404).json({ message: "Empleado no encontrado" });
     }
 
@@ -84,14 +85,14 @@ router.post("/", async (req, res) => {
 
     res.json({ message: "✅ Novedad registrada con éxito" });
   } catch (err) {
-    console.error("❌ Error creando novedad:", err);
-    res.status(500).json({ message: "Error en el servidor", error: err.message });
+    console.error("❌ Error creando novedad:", err.message);
+    res.status(500).json({ message: "Error en el servidor" });
   }
 });
 
-
+// ==============================
 // Actualizar novedad
-
+// ==============================
 router.put("/:id", async (req, res) => {
   try {
     const { id } = req.params;
@@ -107,13 +108,10 @@ router.put("/:id", async (req, res) => {
     } = req.body;
 
     if (!nombre_empleado || !tipo || !fecha_inicio) {
-      return res.status(400).json({
-        message: "Faltan datos obligatorios",
-        recibido: req.body,
-      });
+      return res.status(400).json({ message: "Faltan datos obligatorios" });
     }
 
-    // Buscar ID del empleado por nombre
+    // Buscar ID del empleado
     const [empleado] = await connection.query(
       "SELECT id FROM empleados WHERE nombre_empleado = ?",
       [nombre_empleado]
@@ -150,9 +148,9 @@ router.put("/:id", async (req, res) => {
   }
 });
 
-
+// ==============================
 // Eliminar novedad
-
+// ==============================
 router.delete("/:id", async (req, res) => {
   try {
     const { id } = req.params;
