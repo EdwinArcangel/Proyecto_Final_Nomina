@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api, { AUTH_PATH } from "./utils/api";
-import logo from "./assets/logo_nomina.jpg";
+import logo from "./assets/logo_nomina.jpg"; // corrige la ruta si es "asset" y no "assets"
 
 const Login = ({ onLoginSuccess }) => {
   const [email, setEmail] = useState("");
@@ -18,14 +18,10 @@ const Login = ({ onLoginSuccess }) => {
       });
 
       if (response.data.token) {
-        // Guardamos token y usuario en localStorage
         localStorage.setItem("token", response.data.token);
         localStorage.setItem("user", JSON.stringify(response.data.usuario));
 
-        // Pasamos el usuario completo al App
         onLoginSuccess(response.data.token, response.data.usuario);
-
-        // Redirigimos al home
         navigate("/home");
       }
     } catch (error) {
@@ -41,7 +37,7 @@ const Login = ({ onLoginSuccess }) => {
     <div style={styles.container}>
       <div style={styles.card}>
         <img src={logo} alt="Logo empresa" style={styles.logo} />
-        <h2 style={styles.title}>E- Nómina</h2>
+        <h2 style={styles.title}>E - Nómina</h2>
         <p style={styles.subtitle}>Ingresa con tu cuenta</p>
 
         <form onSubmit={handleLogin} style={styles.form}>
@@ -82,25 +78,27 @@ const styles = {
   },
   card: {
     backgroundColor: "white",
-    padding: "2rem",
-    borderRadius: "12px",
-    boxShadow: "0px 4px 20px rgba(0,0,0,0.2)",
+    padding: "2.5rem",
+    borderRadius: "14px",
+    boxShadow: "0px 6px 25px rgba(0, 0, 0, 0.2)",
     width: "100%",
-    maxWidth: "400px",
+    maxWidth: "450px", // más grande
     textAlign: "center",
   },
   logo: {
-    width: "80px",
+    width: "100px",
     marginBottom: "1rem",
   },
   title: {
     marginBottom: "0.5rem",
     color: "#333",
+    fontSize: "1.5rem",
+    fontWeight: "bold",
   },
   subtitle: {
-    marginBottom: "1.5rem",
-    color: "#666",
-    fontSize: "1rem",
+    marginBottom: "1.8rem",
+    color: "#555",
+    fontSize: "1.1rem",
   },
   form: {
     display: "flex",
@@ -108,25 +106,28 @@ const styles = {
     gap: "1rem",
   },
   input: {
-    padding: "0.8rem",
-    borderRadius: "8px",
+    padding: "1rem",
+    borderRadius: "10px",
     border: "1px solid #ccc",
     fontSize: "1rem",
+    backgroundColor: "#f9f9f9", // más claro
+    transition: "border-color 0.3s",
   },
   button: {
-    padding: "0.8rem",
-    borderRadius: "8px",
+    padding: "1rem",
+    borderRadius: "10px",
     border: "none",
     backgroundColor: "#4facfe",
     color: "white",
-    fontSize: "1rem",
+    fontSize: "1.1rem",
+    fontWeight: "bold",
     cursor: "pointer",
-    transition: "0.3s",
+    transition: "background-color 0.3s",
   },
   message: {
     marginTop: "1rem",
     fontWeight: "bold",
-    color: "#333",
+    color: "red",
   },
 };
 
