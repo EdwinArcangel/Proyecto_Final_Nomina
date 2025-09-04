@@ -1,6 +1,5 @@
-// App.js
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -22,8 +21,17 @@ function PrivateRoute({ children }) {
 function App() {
   const [user, setUser] = useState(null);
 
+  // ✅ Cargar usuario desde localStorage al iniciar
+  useEffect(() => {
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    }
+  }, []);
+
   const handleLoginSuccess = (token, usuario) => {
     localStorage.setItem("token", token);
+    localStorage.setItem("user", JSON.stringify(usuario));
     setUser(usuario);
   };
 
@@ -100,13 +108,17 @@ function App() {
         <Route path="/" element={<Navigate to="/login" replace />} />
       </Routes>
 
-<ToastContainer
-  position="top-right"
-  autoClose={3500}
-  newestOnTop
-  theme="colored"
-  toastStyle={{ fontSize: "14px", padding: "14px 16px", minWidth: "340px" }}
-/>
+      <ToastContainer
+        position="top-right"
+        autoClose={3500}
+        newestOnTop
+        theme="colored"
+        toastStyle={{
+          fontSize: "14px",
+          padding: "14px 16px",
+          minWidth: "340px",
+        }}
+      />
     </BrowserRouter>
   );
 }

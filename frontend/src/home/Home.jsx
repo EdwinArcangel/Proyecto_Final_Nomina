@@ -1,4 +1,3 @@
-// src/home/Home.jsx
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import api from "../utils/api";
@@ -8,7 +7,7 @@ import {
 } from "recharts";
 import logo from "../assets/react.svg";
 
-export default function Home() {
+export default function Home({ user }) {
   const navigate = useNavigate();
   const [stats, setStats] = useState({
     empleados: 0,
@@ -61,6 +60,7 @@ export default function Home() {
 
   const handleLogout = () => {
     localStorage.removeItem("token");
+    localStorage.removeItem("user"); // ✅ limpiar usuario también
     navigate("/login");
   };
 
@@ -90,7 +90,10 @@ export default function Home() {
       {/* Main */}
       <div style={styles.main}>
         <nav style={styles.navbar}>
-          <span>SISTEMA DE NÓMINA</span>
+          {/* ✅ Bienvenida personalizada */}
+          <span>
+            👋 Hola, {user?.nombre_usuario || "Usuario"} ({user?.rol || "rol"})
+          </span>
           <button style={styles.logoutBtn} onClick={handleLogout}>
             Cerrar sesión
           </button>
@@ -112,11 +115,11 @@ export default function Home() {
             </div>
             <div style={{ ...styles.card, background: "#ff9800", color: "white" }}>
               <h3>📌 Novedades pendientes</h3>
-              <p>Total registrados: <strong>{stats.novedadesPendientes}</strong></p>
+              <p>Total: <strong>{stats.novedadesPendientes}</strong></p>
             </div>
             <div style={{ ...styles.card, background: "#8bc34a", color: "white" }}>
               <h3>✅ Novedades aprobadas</h3>
-              <p>Total registrados: <strong>{stats.novedadesAprobadas}</strong></p>
+              <p>Total: <strong>{stats.novedadesAprobadas}</strong></p>
             </div>
           </div>
 
@@ -173,55 +176,83 @@ export default function Home() {
 const styles = {
   layout: { display: "flex", height: "100vh", fontFamily: "Arial, sans-serif" },
   sidebar: {
-    width: "240px", // más ancho
+    width: "240px",
     background: "linear-gradient(180deg, #4facfe, #00f2fe)",
     color: "white",
     padding: "1rem",
     textAlign: "center",
   },
   logoWrapper: {
-    width: "120px", height: "120px", borderRadius: "50%", backgroundColor: "white",
-    display: "flex", justifyContent: "center", alignItems: "center",
-    margin: "0 auto 0.8rem auto", boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
+    width: "120px",
+    height: "120px",
+    borderRadius: "50%",
+    backgroundColor: "white",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    margin: "0 auto 0.8rem auto",
+    boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
   },
   logoImg: { width: "70px" },
   logoText: { fontSize: "1.4rem", fontWeight: "bold", margin: "1rem 0" },
   menu: { listStyle: "none", padding: 0, marginTop: "1rem" },
   menuItem: {
-    padding: "1rem",           // más grande
+    padding: "1rem",
     margin: "0.6rem 0",
     borderRadius: "12px",
     cursor: "pointer",
     background: "rgba(255,255,255,0.15)",
-    fontSize: "1.1rem",        // texto más grande
+    fontSize: "1.1rem",
     fontWeight: "500",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     transition: "all 0.2s ease-in-out",
   },
-  main: { flex: 1, background: "#f4f6f9", display: "flex", flexDirection: "column", color: "#333" },
+  main: {
+    flex: 1,
+    background: "#f4f6f9",
+    display: "flex",
+    flexDirection: "column",
+    color: "#333",
+  },
   navbar: {
-    background: "white", padding: "1rem 2rem",
-    display: "flex", justifyContent: "space-between", alignItems: "center",
+    background: "white",
+    padding: "1rem 2rem",
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
     borderBottom: "1px solid #ddd",
   },
   logoutBtn: {
-    padding: "0.6rem 1.2rem", border: "none", borderRadius: "8px",
-    background: "#ff4d4d", color: "white", fontWeight: "bold", cursor: "pointer",
+    padding: "0.6rem 1.2rem",
+    border: "none",
+    borderRadius: "8px",
+    background: "#ff4d4d",
+    color: "white",
+    fontWeight: "bold",
+    cursor: "pointer",
   },
   dashboard: { padding: "2rem" },
   cardsContainer: {
-    display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-    gap: "1rem", marginBottom: "2rem",
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+    gap: "1rem",
+    marginBottom: "2rem",
   },
   card: {
-    padding: "1.5rem", borderRadius: "12px", boxShadow: "0 4px 10px rgba(0,0,0,0.1)",
-    textAlign: "center", fontSize: "1.1rem", fontWeight: "bold",
+    padding: "1.5rem",
+    borderRadius: "12px",
+    boxShadow: "0 4px 10px rgba(0,0,0,0.1)",
+    textAlign: "center",
+    fontSize: "1.1rem",
+    fontWeight: "bold",
   },
   charts: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: "2rem" },
   chartBox: {
-    background: "white", padding: "1rem", borderRadius: "12px",
+    background: "white",
+    padding: "1rem",
+    borderRadius: "12px",
     boxShadow: "0 4px 10px rgba(0,0,0,0.1)",
   },
 };

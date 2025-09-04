@@ -243,7 +243,7 @@ async function runSeeds(pool) {
         ('Project Manager', 6000000, 1),
         ('Contador', 5000000, 3)`
     );
-    console.log(" Cargos de prueba insertados");
+    console.log("Cargos de prueba insertados");
   }
 
   // Empleados
