@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import api, { AUTH_PATH } from "./utils/api";
 import logo from "./assets/logo_nomina.jpg";
-import { FaUser, FaLock } from "react-icons/fa";
 
 const Login = ({ onLoginSuccess }) => {
   const [email, setEmail] = useState("");
