@@ -1,12 +1,13 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 import api, { AUTH_PATH } from "./utils/api";
-import logo from "./assets/logo_nomina.jpg"; // corrige la ruta si es "asset" y no "assets"
+import { FaUser, FaLock } from "react-icons/fa";
+import logo from "./assets/logo_nomina.jpg";
 
 const Login = ({ onLoginSuccess }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [message, setMessage] = useState("");
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
@@ -22,10 +23,12 @@ const Login = ({ onLoginSuccess }) => {
         localStorage.setItem("user", JSON.stringify(response.data.usuario));
 
         onLoginSuccess(response.data.token, response.data.usuario);
+
+        toast.success("✅ Inicio de sesión exitoso");
         navigate("/home");
       }
     } catch (error) {
-      setMessage(
+      toast.error(
         error.response
           ? "❌ " + error.response.data.message
           : "⚠️ Error de conexión con el servidor"
@@ -36,33 +39,38 @@ const Login = ({ onLoginSuccess }) => {
   return (
     <div style={styles.container}>
       <div style={styles.card}>
-        <img src={logo} alt="Logo empresa" style={styles.logo} />
-        <h2 style={styles.title}>E - Nómina</h2>
+        <div style={styles.logoWrapper}>
+          <img src={logo} alt="Logo empresa" style={styles.logo} />
+        </div>
         <p style={styles.subtitle}>Ingresa con tu cuenta</p>
 
         <form onSubmit={handleLogin} style={styles.form}>
-          <input
-            type="email"
-            placeholder="Correo"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            style={styles.input}
-          />
-          <input
-            type="password"
-            placeholder="Contraseña"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            style={styles.input}
-          />
+          <div style={styles.inputWrapper}>
+            <FaUser style={styles.inputIcon} />
+            <input
+              type="email"
+              placeholder="Correo"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              style={styles.input}
+            />
+          </div>
+          <div style={styles.inputWrapper}>
+            <FaLock style={styles.inputIcon} />
+            <input
+              type="password"
+              placeholder="Contraseña"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              style={styles.input}
+            />
+          </div>
           <button type="submit" style={styles.button}>
             Ingresar
           </button>
         </form>
-
-        {message && <p style={styles.message}>{message}</p>}
       </div>
     </div>
   );
@@ -79,55 +87,57 @@ const styles = {
   card: {
     backgroundColor: "white",
     padding: "2.5rem",
-    borderRadius: "14px",
-    boxShadow: "0px 6px 25px rgba(0, 0, 0, 0.2)",
+    borderRadius: "16px",
+    boxShadow: "0px 6px 25px rgba(0,0,0,0.15)",
     width: "100%",
-    maxWidth: "450px", // más grande
+    maxWidth: "420px",
     textAlign: "center",
   },
-  logo: {
-    width: "100px",
-    marginBottom: "1rem",
-  },
-  title: {
-    marginBottom: "0.5rem",
-    color: "#333",
-    fontSize: "1.5rem",
-    fontWeight: "bold",
-  },
-  subtitle: {
-    marginBottom: "1.8rem",
-    color: "#555",
-    fontSize: "1.1rem",
-  },
-  form: {
+  logoWrapper: {
+    width: "110px",
+    height: "110px",
+    margin: "0 auto 1rem auto",
+    borderRadius: "50%",
+    background: "white",
     display: "flex",
-    flexDirection: "column",
-    gap: "1rem",
+    justifyContent: "center",
+    alignItems: "center",
+    boxShadow: "0px 4px 15px rgba(0,0,0,0.1)",
   },
-  input: {
-    padding: "1rem",
-    borderRadius: "10px",
+  logo: { width: "80px", borderRadius: "50%" },
+  title: { marginBottom: "0.3rem", color: "#333" },
+  subtitle: { marginBottom: "1.5rem", color: "#666", fontSize: "1rem" },
+  form: { display: "flex", flexDirection: "column", gap: "1rem" },
+  inputWrapper: {
+    display: "flex",
+    alignItems: "center",
     border: "1px solid #ccc",
+    borderRadius: "10px",
+    padding: "0.7rem",
+    backgroundColor: "#f9f9f9",
+  },
+  inputIcon: { marginRight: "10px", color: "#666" },
+  input: {
+    flex: 1,
+    border: "none",
+    outline: "none",
+    background: "transparent",
     fontSize: "1rem",
-    backgroundColor: "#f9f9f9", // más claro
-    transition: "border-color 0.3s",
+    color: "#333",
   },
   button: {
-    padding: "1rem",
+    padding: "0.9rem",
     borderRadius: "10px",
     border: "none",
-    backgroundColor: "#4facfe",
+    background: "linear-gradient(90deg, #4facfe, #00f2fe)",
     color: "white",
     fontSize: "1.1rem",
-    fontWeight: "bold",
     cursor: "pointer",
-    transition: "background-color 0.3s",
+    transition: "all 0.3s ease",
   },
-  message: {
-    marginTop: "1rem",
-    fontWeight: "bold",
-    color: "red",
+  buttonHover: {
+    background: "linear-gradient(90deg, #357ae8, #0099cc)",
+    transform: "scale(1.02)",
   },
 };
 
