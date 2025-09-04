@@ -27,17 +27,17 @@ router.post("/login", async (req, res) => {
     // Crear token
     const token = jwt.sign(
       { id: usuario.id, rol: usuario.rol },
-      "mi_secreto",
+      "mi_secreto", // 🔐 usa un secreto más seguro en producción (desde env)
       { expiresIn: "1h" }
     );
 
-    // Devolver token y datos del usuario
+    // ✅ Devolver token + usuario (con nombre_usuario)
     res.json({
       message: "Login exitoso",
       token,
       usuario: {
         id: usuario.id,
-        nombre_usuario: usuario.nombre_usuario,
+        nombre_usuario: usuario.nombre_usuario, // 👈 corregido
         email: usuario.email,
         rol: usuario.rol,
       },
