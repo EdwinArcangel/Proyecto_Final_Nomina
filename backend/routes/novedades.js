@@ -3,9 +3,6 @@ import { connection } from "../config/db.js";
 
 const router = express.Router();
 
-// ==============================
-// Listar todas las novedades (con nombre_empleado vía JOIN)
-// ==============================
 router.get("/", async (req, res) => {
   try {
     const [rows] = await connection.query(`
@@ -31,9 +28,8 @@ router.get("/", async (req, res) => {
   }
 });
 
-// ==============================
-// Crear una novedad (buscando empleado por nombre)
-// ==============================
+
+// Crear una novedad
 router.post("/", async (req, res) => {
   try {
     console.log("📩 Body recibido:", req.body);
@@ -93,9 +89,9 @@ router.post("/", async (req, res) => {
   }
 });
 
-// ==============================
-// Actualizar novedad (buscando empleado por nombre)
-// ==============================
+
+// Actualizar novedad
+
 router.put("/:id", async (req, res) => {
   try {
     const { id } = req.params;
@@ -154,9 +150,9 @@ router.put("/:id", async (req, res) => {
   }
 });
 
-// ==============================
+
 // Eliminar novedad
-// ==============================
+
 router.delete("/:id", async (req, res) => {
   try {
     const { id } = req.params;
