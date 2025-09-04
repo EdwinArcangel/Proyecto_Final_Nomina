@@ -1,3 +1,4 @@
+// src/home/Home.jsx
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import api from "../utils/api";
@@ -60,7 +61,7 @@ export default function Home({ user }) {
 
   const handleLogout = () => {
     localStorage.removeItem("token");
-    localStorage.removeItem("user"); // ✅ limpiar usuario también
+    localStorage.removeItem("user");
     navigate("/login");
   };
 
@@ -78,27 +79,37 @@ export default function Home({ user }) {
         </div>
         <h2 style={styles.logoText}>E - Nómina</h2>
         <ul style={styles.menu}>
-          <li style={styles.menuItem} onClick={() => navigate("/home")}>📊 Dashboard</li>
-          <li style={styles.menuItem} onClick={() => navigate("/empleados")}>👥 Empleados</li>
-          <li style={styles.menuItem} onClick={() => navigate("/usuarios")}>🧑‍💻 Usuarios</li>
-          <li style={styles.menuItem} onClick={() => navigate("/novedades")}>📌 Novedades</li>
-          <li style={styles.menuItem} onClick={() => navigate("/pagos")}>💰 Pagos</li>
-          <li style={styles.menuItem} onClick={() => navigate("/reportes")}>📑 Reportes</li>
+          {[
+            { path: "/home", label: "📊 Dashboard" },
+            { path: "/empleados", label: "👥 Empleados" },
+            { path: "/usuarios", label: "🧑‍💻 Usuarios" },
+            { path: "/novedades", label: "📌 Novedades" },
+            { path: "/pagos", label: "💰 Pagos" },
+            { path: "/reportes", label: "📑 Reportes" },
+          ].map((item, idx) => (
+            <li
+              key={idx}
+              style={styles.menuItem}
+              onMouseEnter={(e) =>
+                Object.assign(e.currentTarget.style, styles.menuItemHover)
+              }
+              onMouseLeave={(e) =>
+                Object.assign(e.currentTarget.style, styles.menuItem)
+              }
+              onClick={() => navigate(item.path)}
+            >
+              {item.label}
+            </li>
+          ))}
         </ul>
       </aside>
 
       {/* Main */}
       <div style={styles.main}>
         <nav style={styles.navbar}>
-          <div style={styles.saludoWrapper}>
-            <h1 style={styles.saludo}>
-              👋 Hola,{" "}
-              <span style={styles.nombre}>
-                {user?.nombre_usuario || "Usuario"}
-              </span>
-            </h1>
-            <p style={styles.subtitulo}>Bienvenido de nuevo al sistema de nómina</p>
-          </div>
+          <span style={styles.welcome}>
+            👋 Hola, {user?.nombre_usuario}
+          </span>
           <button style={styles.logoutBtn} onClick={handleLogout}>
             Cerrar sesión
           </button>
@@ -181,10 +192,10 @@ export default function Home({ user }) {
 const styles = {
   layout: { display: "flex", height: "100vh", fontFamily: "Arial, sans-serif" },
   sidebar: {
-    width: "240px",
+    width: "260px",
     background: "linear-gradient(180deg, #4facfe, #00f2fe)",
     color: "white",
-    padding: "1rem",
+    padding: "1.5rem 1rem",
     textAlign: "center",
   },
   logoWrapper: {
@@ -202,17 +213,23 @@ const styles = {
   logoText: { fontSize: "1.4rem", fontWeight: "bold", margin: "1rem 0" },
   menu: { listStyle: "none", padding: 0, marginTop: "1rem" },
   menuItem: {
-    padding: "1rem",
-    margin: "0.6rem 0",
-    borderRadius: "12px",
+    padding: "1.2rem",
+    margin: "0.8rem 0",
+    borderRadius: "14px",
     cursor: "pointer",
-    background: "rgba(255,255,255,0.15)",
-    fontSize: "1.1rem",
-    fontWeight: "500",
+    background: "rgba(255,255,255,0.25)",
+    fontSize: "1.2rem",
+    fontWeight: "600",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    transition: "all 0.2s ease-in-out",
+    transition: "all 0.3s ease-in-out",
+    boxShadow: "0 4px 10px rgba(0,0,0,0.15)",
+  },
+  menuItemHover: {
+    background: "white",
+    color: "#4facfe",
+    transform: "scale(1.05)",
   },
   main: {
     flex: 1,
@@ -229,25 +246,10 @@ const styles = {
     alignItems: "center",
     borderBottom: "1px solid #ddd",
   },
-  saludoWrapper: {
-    display: "flex",
-    flexDirection: "column",
-  },
-  saludo: {
-    fontSize: "2rem", // 👈 más grande
+  welcome: {
+    fontSize: "1.3rem",
     fontWeight: "bold",
-    margin: 0,
-    color: "#333",
-  },
-  nombre: {
-    background: "linear-gradient(135deg, #4facfe, #00f2fe)",
-    WebkitBackgroundClip: "text",
-    WebkitTextFillColor: "transparent",
-  },
-  subtitulo: {
-    fontSize: "0.95rem",
-    color: "#666",
-    marginTop: "0.3rem",
+    color: "#4facfe",
   },
   logoutBtn: {
     padding: "0.6rem 1.2rem",
