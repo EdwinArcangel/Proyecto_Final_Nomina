@@ -5,7 +5,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend
 } from "recharts";
-import logo from "../assets/logo_nomina.png";
+import logo from "../assets/logo_nomina.jpg";
 
 export default function Home({ user }) {
   const navigate = useNavigate();
