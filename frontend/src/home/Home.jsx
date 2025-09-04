@@ -90,10 +90,15 @@ export default function Home({ user }) {
       {/* Main */}
       <div style={styles.main}>
         <nav style={styles.navbar}>
-          {/* ✅ Bienvenida personalizada */}
-          <span>
-            👋 Hola, {user?.nombre_usuario} 
-          </span>
+          <div style={styles.saludoWrapper}>
+            <h1 style={styles.saludo}>
+              👋 Hola,{" "}
+              <span style={styles.nombre}>
+                {user?.nombre_usuario || "Usuario"}
+              </span>
+            </h1>
+            <p style={styles.subtitulo}>Bienvenido de nuevo al sistema de nómina</p>
+          </div>
           <button style={styles.logoutBtn} onClick={handleLogout}>
             Cerrar sesión
           </button>
@@ -223,6 +228,26 @@ const styles = {
     justifyContent: "space-between",
     alignItems: "center",
     borderBottom: "1px solid #ddd",
+  },
+  saludoWrapper: {
+    display: "flex",
+    flexDirection: "column",
+  },
+  saludo: {
+    fontSize: "2rem", // 👈 más grande
+    fontWeight: "bold",
+    margin: 0,
+    color: "#333",
+  },
+  nombre: {
+    background: "linear-gradient(135deg, #4facfe, #00f2fe)",
+    WebkitBackgroundClip: "text",
+    WebkitTextFillColor: "transparent",
+  },
+  subtitulo: {
+    fontSize: "0.95rem",
+    color: "#666",
+    marginTop: "0.3rem",
   },
   logoutBtn: {
     padding: "0.6rem 1.2rem",
