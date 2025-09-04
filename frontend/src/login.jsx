@@ -2,8 +2,8 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import api, { AUTH_PATH } from "./utils/api";
-import { FaUser, FaLock } from "react-icons/fa";
 import logo from "./assets/logo_nomina.jpg";
+import { FaUser, FaLock } from "react-icons/fa";
 
 const Login = ({ onLoginSuccess }) => {
   const [email, setEmail] = useState("");
@@ -42,11 +42,13 @@ const Login = ({ onLoginSuccess }) => {
         <div style={styles.logoWrapper}>
           <img src={logo} alt="Logo empresa" style={styles.logo} />
         </div>
+        <h2 style={styles.title}>E - Nómina</h2>
         <p style={styles.subtitle}>Ingresa con tu cuenta</p>
 
         <form onSubmit={handleLogin} style={styles.form}>
-          <div style={styles.inputWrapper}>
-            <FaUser style={styles.inputIcon} />
+          {/* Input de correo */}
+          <div style={styles.inputGroup}>
+            <FaUser style={styles.icon} />
             <input
               type="email"
               placeholder="Correo"
@@ -56,8 +58,10 @@ const Login = ({ onLoginSuccess }) => {
               style={styles.input}
             />
           </div>
-          <div style={styles.inputWrapper}>
-            <FaLock style={styles.inputIcon} />
+
+          {/* Input de contraseña */}
+          <div style={styles.inputGroup}>
+            <FaLock style={styles.icon} />
             <input
               type="password"
               placeholder="Contraseña"
@@ -67,6 +71,7 @@ const Login = ({ onLoginSuccess }) => {
               style={styles.input}
             />
           </div>
+
           <button type="submit" style={styles.button}>
             Ingresar
           </button>
@@ -108,7 +113,7 @@ const styles = {
   title: { marginBottom: "0.3rem", color: "#333" },
   subtitle: { marginBottom: "1.5rem", color: "#666", fontSize: "1rem" },
   form: { display: "flex", flexDirection: "column", gap: "1rem" },
-  inputWrapper: {
+  inputGroup: {
     display: "flex",
     alignItems: "center",
     border: "1px solid #ccc",
@@ -116,7 +121,7 @@ const styles = {
     padding: "0.7rem",
     backgroundColor: "#f9f9f9",
   },
-  inputIcon: { marginRight: "10px", color: "#666" },
+  icon: { marginRight: "10px", color: "#4facfe", fontSize: "1.1rem" },
   input: {
     flex: 1,
     border: "none",
@@ -134,10 +139,6 @@ const styles = {
     fontSize: "1.1rem",
     cursor: "pointer",
     transition: "all 0.3s ease",
-  },
-  buttonHover: {
-    background: "linear-gradient(90deg, #357ae8, #0099cc)",
-    transform: "scale(1.02)",
   },
 };
 
