@@ -2,8 +2,8 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import api, { AUTH_PATH } from "./utils/api";
+import logo from "./assets/logo_nomina.jpg"; 
 import { FaUser, FaLock } from "react-icons/fa";
-
 
 const Login = ({ onLoginSuccess }) => {
   const [email, setEmail] = useState("");
@@ -22,7 +22,6 @@ const Login = ({ onLoginSuccess }) => {
       if (response.data.token) {
         localStorage.setItem("token", response.data.token);
         localStorage.setItem("user", JSON.stringify(response.data.usuario));
-
         onLoginSuccess(response.data.token, response.data.usuario);
         navigate("/home");
       }
@@ -38,8 +37,7 @@ const Login = ({ onLoginSuccess }) => {
   return (
     <div style={styles.container}>
       <div style={styles.card}>
-        <img src="/logo_nomina.jpg" alt="Logo empresa" style={styles.logo} />
-        <h2 style={styles.title}>E - Nómina</h2>
+        <img src={logo} alt="Logo empresa" style={styles.logo} />
         <p style={styles.subtitle}>Ingresa con tu cuenta</p>
 
         <form onSubmit={handleLogin} style={styles.form}>
@@ -90,7 +88,7 @@ const styles = {
     backgroundColor: "white",
     padding: "2.5rem",
     borderRadius: "12px",
-    boxShadow: "0px 6px 25px rgba(0,0,0,0.2)",
+    boxShadow: "0px 4px 20px rgba(0,0,0,0.2)",
     width: "100%",
     maxWidth: "420px",
     textAlign: "center",
@@ -102,6 +100,7 @@ const styles = {
   title: {
     marginBottom: "0.5rem",
     color: "#333",
+    fontWeight: "bold",
   },
   subtitle: {
     marginBottom: "1.5rem",
@@ -118,8 +117,8 @@ const styles = {
     alignItems: "center",
     border: "1px solid #ccc",
     borderRadius: "8px",
-    padding: "0.5rem 0.8rem",
-    backgroundColor: "#f9f9f9",
+    padding: "0.6rem",
+    background: "#f9f9f9",
   },
   icon: {
     marginRight: "0.5rem",
@@ -129,8 +128,9 @@ const styles = {
     flex: 1,
     border: "none",
     outline: "none",
-    fontSize: "1rem",
     background: "transparent",
+    fontSize: "1rem",
+    color: "#333",
   },
   button: {
     padding: "0.8rem",
@@ -141,11 +141,12 @@ const styles = {
     fontSize: "1rem",
     cursor: "pointer",
     transition: "0.3s",
+    fontWeight: "bold",
   },
   message: {
     marginTop: "1rem",
     fontWeight: "bold",
-    color: "#d9534f",
+    color: "#e74c3c",
   },
 };
 
