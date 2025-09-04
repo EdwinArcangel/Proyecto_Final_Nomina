@@ -92,7 +92,7 @@ export default function Home({ user }) {
         <nav style={styles.navbar}>
           {/* ✅ Bienvenida personalizada */}
           <span>
-            👋 Hola, {user?.nombre_usuario || "Usuario"} ({user?.rol || "rol"})
+            👋 Hola, {user?.nombre_usuario} 
           </span>
           <button style={styles.logoutBtn} onClick={handleLogout}>
             Cerrar sesión
