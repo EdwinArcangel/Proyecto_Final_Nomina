@@ -1,8 +1,7 @@
 import axios from "axios";
 
-// Si no hay VITE_API_URL, usa directamente el backend local
 const baseURL =
-  import.meta.env.VITE_API_URL || "https://e-nomina.vercel.app/api/auth/login";
+  import.meta.env.VITE_API_URL || "https://proyecto-final-nomina.onrender.com/api";
 
 console.log("API URL en uso:", baseURL);
 
