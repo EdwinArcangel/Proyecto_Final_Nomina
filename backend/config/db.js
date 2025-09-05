@@ -19,11 +19,11 @@ export async function connectDB() {
   const host = process.env.MYSQL_HOST || "shuttle.proxy.rlwy.net";
   const port = Number(process.env.MYSQL_PORT || 59903);
   const user = process.env.MYSQL_USER || "root";
-  const password = process.env.MYSQL_PASSWORD || "eyyajYBcbpiGiaFQeEtkGnRkuiafvSuC";
+  const password =
+    process.env.MYSQL_PASSWORD || "eyyajYBcbpiGiaFQeEtkGnRkuiafvSuC";
   const database = process.env.MYSQL_DB || "railway";
   const useSSL = toBool(process.env.MYSQL_SSL, false);
 
-  // Por defecto, en local sí creamos BD y migramos; en producción no
   const createDbOnBoot = toBool(
     process.env.CREATE_DB_ON_BOOT,
     host === "shuttle.proxy.rlwy.net"
@@ -37,14 +37,13 @@ export async function connectDB() {
     host === "shuttle.proxy.rlwy.net"
   );
 
-  // 1) (Opcional) Crear BD si no existe (conexión temporal sin 'database')
+  // 1) Crear BD si no existe
   if (createDbOnBoot) {
     const admin = await mysql.createConnection({
       host,
       port,
       user,
       password,
-      // multipleStatements no necesario aquí
       ssl: useSSL ? { rejectUnauthorized: true } : undefined,
     });
     await admin.query(`CREATE DATABASE IF NOT EXISTS \`${database}\``);
@@ -62,7 +61,6 @@ export async function connectDB() {
     waitForConnections: true,
     connectionLimit: 10,
     queueLimit: 0,
-    // Evitamos múltiples statements por compatibilidad con algunos proveedores
     multipleStatements: false,
     ssl: useSSL ? { rejectUnauthorized: true } : undefined,
   });
@@ -71,13 +69,13 @@ export async function connectDB() {
   const [ping] = await pool.query("SELECT 1 AS db_ok");
   console.log("✅ MySQL listo:", ping[0]);
 
-  // 3) (Opcional) Migraciones (crear tablas)
+  // 3) Migraciones
   if (migrateOnBoot) {
     await runMigrations(pool);
     console.log("🗄️ Migraciones aplicadas (tablas creadas o ya existentes)");
   }
 
-  // 4) (Opcional) Data inicial (admin, catálogos, etc.)
+  // 4) Seeds iniciales
   if (seedOnBoot) {
     await runSeeds(pool);
   }
@@ -90,7 +88,7 @@ export function getPool() {
   return pool;
 }
 
-// Alias para compatibilidad con tu código existente que importa { connection }
+// Alias para compatibilidad
 export const connection = new Proxy(
   {},
   {
@@ -105,7 +103,6 @@ export const connection = new Proxy(
    MIGRACIONES (CREATE TABLE)
    ========================= */
 async function runMigrations(pool) {
-  // Ejecuta cada sentencia por separado para evitar multipleStatements
   const statements = [
     `CREATE TABLE IF NOT EXISTS usuarios (
       id INT AUTO_INCREMENT PRIMARY KEY,
@@ -182,6 +179,23 @@ async function runMigrations(pool) {
       fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (empleado_id) REFERENCES empleados(id) ON DELETE CASCADE,
       FOREIGN KEY (aprobado_por) REFERENCES usuarios(id) ON DELETE SET NULL
+    )`,
+
+    // Parámetros para liquidación
+    `CREATE TABLE IF NOT EXISTS parametros_nomina (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      nombre VARCHAR(100) NOT NULL,
+      valor DECIMAL(10,2) NOT NULL
+    )`,
+
+    // Detalle de pagos (conceptos)
+    `CREATE TABLE IF NOT EXISTS pago_detalle (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      pago_id INT NOT NULL,
+      concepto VARCHAR(100) NOT NULL,
+      valor DECIMAL(12,2) NOT NULL,
+      tipo ENUM('devengado','deduccion','aporte') NOT NULL,
+      FOREIGN KEY (pago_id) REFERENCES pagos(id) ON DELETE CASCADE
     )`,
   ];
 
@@ -272,5 +286,20 @@ async function runSeeds(pool) {
       ["2025-08-01", "2025-08-31", "abierto"]
     );
     console.log("Periodo de nómina creado");
+  }
+
+  // Parámetros de nómina
+  const [[{ total: paramCount }]] = await pool.query(
+    "SELECT COUNT(*) AS total FROM parametros_nomina"
+  );
+  if (paramCount === 0) {
+    await pool.query(
+      `INSERT INTO parametros_nomina (nombre, valor) VALUES
+        ('SALUD_PORC', 4.0),
+        ('PENSION_PORC', 4.0),
+        ('ARL_PORC', 0.5),
+        ('AUX_TRANSPORTE', 140606)`
+    );
+    console.log("Parámetros de nómina insertados");
   }
 }

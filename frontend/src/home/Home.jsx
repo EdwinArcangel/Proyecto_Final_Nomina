@@ -77,7 +77,6 @@ export default function Home({ user }) {
         <div style={styles.logoWrapper}>
           <img src={logo} alt="Logo empresa" style={styles.logoImg} />
         </div>
-        <h2 style={styles.logoText}>E - Nómina</h2>
         <ul style={styles.menu}>
           {[
             { path: "/home", label: "📊 Dashboard" },

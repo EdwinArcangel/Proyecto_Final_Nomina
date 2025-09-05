@@ -74,28 +74,18 @@ router.post("/", async (req, res) => {
   try {
     const { empleado_id, periodo_id, fecha_pago, monto, metodo_pago, estado, observaciones } = req.body;
 
-    // Validar que el empleado exista
-    const [empleado] = await connection.query(
-      "SELECT id FROM empleados WHERE id = ?",
-      [empleado_id]
-    );
-
+    const [empleado] = await connection.query("SELECT id FROM empleados WHERE id = ?", [empleado_id]);
     if (empleado.length === 0) {
       return res.status(400).json({ error: "El empleado no existe" });
     }
 
-    // (Opcional) Validar que el periodo exista si viene en el body
     if (periodo_id) {
-      const [periodo] = await connection.query(
-        "SELECT id FROM periodos_nomina WHERE id = ?",
-        [periodo_id]
-      );
+      const [periodo] = await connection.query("SELECT id FROM periodos_nomina WHERE id = ?", [periodo_id]);
       if (periodo.length === 0) {
         return res.status(400).json({ error: "El periodo de nómina no existe" });
       }
     }
 
-    // Insertar pago si pasa las validaciones
     const [result] = await connection.query(
       `INSERT INTO pagos (empleado_id, periodo_id, fecha_pago, monto, metodo_pago, estado, observaciones)
        VALUES (?, ?, ?, ?, ?, ?, ?)`,
@@ -158,6 +148,152 @@ router.delete("/:id", async (req, res) => {
   } catch (err) {
     console.error("❌ Error eliminando pago:", err.message);
     res.status(500).json({ error: "Error al eliminar pago" });
+  }
+});
+
+// ==============================
+// ✅ Liquidar nómina (respuesta detallada)
+// ==============================
+router.post("/liquidar", async (req, res) => {
+  try {
+    const { nombre_empleado, periodo_id } = req.body;
+
+    if (!nombre_empleado || !periodo_id) {
+      return res
+        .status(400)
+        .json({ message: "Faltan datos: nombre_empleado y periodo_id" });
+    }
+
+    // 1) Empleado
+    const [empRows] = await connection.query(
+      `SELECT id, nombre_empleado, documento, email, salario_base
+       FROM empleados WHERE nombre_empleado = ?`,
+      [nombre_empleado]
+    );
+    if (empRows.length === 0)
+      return res.status(404).json({ message: "Empleado no encontrado" });
+    const empleado = empRows[0];
+
+    // 2) Periodo
+    const [perRows] = await connection.query(
+      `SELECT id, fecha_inicio, fecha_fin
+       FROM periodos_nomina WHERE id = ?`,
+      [periodo_id]
+    );
+    if (perRows.length === 0)
+      return res.status(404).json({ message: "Periodo de nómina no encontrado" });
+    const periodo = perRows[0];
+
+    // 3) Novedades aprobadas dentro del periodo
+    const [novedades] = await connection.query(
+      `SELECT id, tipo, descripcion, monto, fecha_inicio, fecha_fin
+       FROM novedades
+       WHERE empleado_id = ?
+         AND estado = 'aprobada'
+         AND fecha_inicio >= ?
+         AND (fecha_fin IS NULL OR fecha_fin <= ?)`,
+      [empleado.id, periodo.fecha_inicio, periodo.fecha_fin]
+    );
+
+    // 4) Desglose de devengos y deducciones
+    const esDevengo = new Set(["bonificacion", "horas_extra"]);
+    const esDeduccion = new Set(["descuento", "ausencia", "incapacidad"]);
+
+    let totalDevengos = 0;
+    let totalDeducciones = 0;
+
+    const detalleNovedades = novedades.map((n) => {
+      const monto = Number(n.monto || 0);
+      if (esDevengo.has(n.tipo)) totalDevengos += monto;
+      if (esDeduccion.has(n.tipo)) totalDeducciones += monto;
+      return {
+        id: n.id,
+        tipo: n.tipo,
+        descripcion: n.descripcion,
+        monto,
+        fecha_inicio: n.fecha_inicio,
+        fecha_fin: n.fecha_fin,
+        clasificacion: esDevengo.has(n.tipo)
+          ? "devengo"
+          : esDeduccion.has(n.tipo)
+          ? "deduccion"
+          : "otro",
+      };
+    });
+
+    const salarioBase = Number(empleado.salario_base || 0);
+    const subtotal = salarioBase + totalDevengos - totalDeducciones;
+
+    // (Opcional) Retenciones del trabajador 4% + 4% sobre salario base
+    // Colócalo en true si quieres aplicarlas:
+    const APLICAR_RETENCIONES = false;
+    const ret_salud = APLICAR_RETENCIONES ? +(salarioBase * 0.04).toFixed(2) : 0;
+    const ret_pension = APLICAR_RETENCIONES ? +(salarioBase * 0.04).toFixed(2) : 0;
+    const totalRetenciones = ret_salud + ret_pension;
+
+    const totalNeto = +(subtotal - totalRetenciones).toFixed(2);
+
+    // 5) Registrar el pago
+    const [ins] = await connection.query(
+      `INSERT INTO pagos (empleado_id, periodo_id, fecha_pago, monto, metodo_pago, estado, observaciones)
+       VALUES (?,?,?,?,?,?,?)`,
+      [
+        empleado.id,
+        periodo.id,
+        new Date(),
+        totalNeto,
+        "transferencia",
+        "pagado",
+        "Liquidación automática",
+      ]
+    );
+
+    // "Número de pago" legible (sin cambiar esquema)
+    const numeroPago = `PG-${String(ins.insertId).padStart(6, "0")}`;
+
+    // 6) Respuesta detallada
+    res.json({
+      message: "✅ Nómina liquidada con éxito",
+      pago: {
+        id: ins.insertId,
+        numero: numeroPago,
+        fecha_pago: new Date(),
+        metodo_pago: "transferencia",
+        estado: "pagado",
+        total_neto: totalNeto,
+      },
+      empleado: {
+        id: empleado.id,
+        nombre: empleado.nombre_empleado,
+        documento: empleado.documento,
+        email: empleado.email,
+      },
+      periodo: {
+        id: periodo.id,
+        inicio: periodo.fecha_inicio,
+        fin: periodo.fecha_fin,
+      },
+      desglose: {
+        salario_base: salarioBase,
+        devengos: {
+          total: totalDevengos,
+        },
+        deducciones: {
+          total: totalDeducciones,
+        },
+        retenciones: {
+          salud_4: ret_salud,
+          pension_4: ret_pension,
+          total: totalRetenciones,
+        },
+        subtotal: subtotal,
+        total_neto: totalNeto,
+      },
+      novedades: detalleNovedades,
+    });
+  } catch (err) {
+    console.error("❌ Error liquidando nómina:", err);
+    res.status(500).json({ message: "Error en el servidor", error: err.message });
   }
 });
 
