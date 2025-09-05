@@ -1,12 +1,13 @@
-import { useEffect, useState } from "react";
+// src/payments/ShowPayments.jsx
+import { useState, useEffect } from "react";
 import api from "../utils/api";
 import { toast } from "react-toastify";
 
 export default function ShowPayments() {
   const [pagos, setPagos] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [showModal, setShowModal] = useState(false);
-  const [editingPago, setEditingPago] = useState(null);
+  const [empleados, setEmpleados] = useState([]);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editing, setEditing] = useState(null);
   const [form, setForm] = useState({
     empleado_id: "",
     periodo_id: "",
@@ -17,40 +18,47 @@ export default function ShowPayments() {
     observaciones: "",
   });
 
-  // ✅ Obtener pagos
+  // Cargar pagos
   const fetchPagos = async () => {
     try {
-      setLoading(true);
       const res = await api.get("/pagos");
       setPagos(res.data);
     } catch (err) {
       toast.error("❌ Error cargando pagos");
-    } finally {
-      setLoading(false);
+    }
+  };
+
+  // Cargar empleados
+  const fetchEmpleados = async () => {
+    try {
+      const res = await api.get("/empleados");
+      setEmpleados(res.data);
+    } catch (err) {
+      toast.error("❌ Error cargando empleados");
     }
   };
 
   useEffect(() => {
     fetchPagos();
+    fetchEmpleados();
   }, []);
 
-  // ✅ Abrir modal (nuevo o edición)
-  const handleOpenModal = (pago = null) => {
-    if (pago) {
-      // edición
-      setEditingPago(pago);
-      setForm({
-        empleado_id: pago.empleado_id,
-        periodo_id: pago.periodo_id,
-        fecha_pago: pago.fecha_pago?.split("T")[0] || "",
-        monto: pago.monto,
-        metodo_pago: pago.metodo_pago,
-        estado: pago.estado,
-        observaciones: pago.observaciones || "",
-      });
-    } else {
-      // nuevo
-      setEditingPago(null);
+  // Guardar (crear o actualizar)
+  const handleSave = async () => {
+    try {
+      if (!form.empleado_id || !form.fecha_pago || !form.monto) {
+        toast.warning("⚠️ Todos los campos obligatorios");
+        return;
+      }
+
+      if (editing) {
+        await api.put(`/pagos/${editing}`, form);
+        toast.success("✏️ Pago actualizado");
+      } else {
+        await api.post("/pagos", form);
+        toast.success("💰 Pago registrado");
+      }
+      setModalOpen(false);
       setForm({
         empleado_id: "",
         periodo_id: "",
@@ -60,31 +68,24 @@ export default function ShowPayments() {
         estado: "pendiente",
         observaciones: "",
       });
-    }
-    setShowModal(true);
-  };
-
-  // ✅ Guardar (nuevo o edición)
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      if (editingPago) {
-        await api.put(`/pagos/${editingPago.id}`, form);
-        toast.success("✏️ Pago actualizado");
-      } else {
-        await api.post("/pagos", form);
-        toast.success("💰 Pago registrado");
-      }
-      setShowModal(false);
+      setEditing(null);
       fetchPagos();
     } catch (err) {
       toast.error("❌ Error guardando pago");
+      console.error(err);
     }
   };
 
-  // ✅ Eliminar pago
+  // Editar
+  const handleEdit = (pago) => {
+    setForm(pago);
+    setEditing(pago.id);
+    setModalOpen(true);
+  };
+
+  // Eliminar
   const handleDelete = async (id) => {
-    if (!window.confirm("¿Seguro que quieres eliminar este pago?")) return;
+    if (!window.confirm("¿Seguro de eliminar este pago?")) return;
     try {
       await api.delete(`/pagos/${id}`);
       toast.success("🗑️ Pago eliminado");
@@ -95,19 +96,30 @@ export default function ShowPayments() {
   };
 
   return (
-    <div style={styles.container}>
-      {/* Header con botón Registrar */}
-      <div style={styles.header}>
-        <h2 style={styles.title}>💰 Gestión de Pagos</h2>
-        <button style={styles.addBtn} onClick={() => handleOpenModal()}>
-          ➕ Registrar Pago
-        </button>
-      </div>
+    <div className="container">
+      <h2 style={{ marginBottom: "1rem" }}>💰 Gestión de Pagos</h2>
 
-      {loading ? (
-        <p>Cargando pagos...</p>
-      ) : (
-        <table style={styles.table}>
+      <button
+        className="btn btn-primary"
+        onClick={() => {
+          setEditing(null);
+          setForm({
+            empleado_id: "",
+            periodo_id: "",
+            fecha_pago: "",
+            monto: "",
+            metodo_pago: "transferencia",
+            estado: "pendiente",
+            observaciones: "",
+          });
+          setModalOpen(true);
+        }}
+      >
+        + Registrar Pago
+      </button>
+
+      <div className="table-responsive">
+        <table className="table custom-table">
           <thead>
             <tr>
               <th>ID</th>
@@ -122,134 +134,152 @@ export default function ShowPayments() {
             </tr>
           </thead>
           <tbody>
-            {pagos.length > 0 ? (
-              pagos.map((p) => (
-                <tr key={p.id}>
-                  <td>{p.id}</td>
-                  <td>{p.empleado_nombre}</td>
-                  <td>{p.periodo_id}</td>
-                  <td>{p.fecha_pago?.split("T")[0]}</td>
-                  <td>
-                    {new Intl.NumberFormat("es-CO", {
-                      style: "currency",
-                      currency: "COP",
-                    }).format(p.monto)}
-                  </td>
-                  <td>{p.metodo_pago}</td>
-                  <td>{p.estado}</td>
-                  <td>{p.observaciones || "—"}</td>
-                  <td>
-                    <button
-                      style={styles.editBtn}
-                      onClick={() => handleOpenModal(p)}
-                    >
-                      ✏️ Editar
-                    </button>
-                    <button
-                      style={styles.deleteBtn}
-                      onClick={() => handleDelete(p.id)}
-                    >
-                      🗑️ Eliminar
-                    </button>
-                  </td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan="9">No hay pagos registrados</td>
+            {pagos.map((pago) => (
+              <tr key={pago.id}>
+                <td>{pago.id}</td>
+                <td>{pago.empleado_nombre}</td>
+                <td>{pago.periodo_id}</td>
+                <td>{pago.fecha_pago?.substring(0, 10)}</td>
+                <td>
+                  {new Intl.NumberFormat("es-CO", {
+                    style: "currency",
+                    currency: "COP",
+                  }).format(pago.monto)}
+                </td>
+                <td>{pago.metodo_pago}</td>
+                <td>{pago.estado}</td>
+                <td className="observaciones">{pago.observaciones}</td>
+                <td>
+                  <button
+                    className="btn btn-warning"
+                    onClick={() => handleEdit(pago)}
+                  >
+                    ✏️ Editar
+                  </button>
+                  <button
+                    className="btn btn-danger"
+                    onClick={() => handleDelete(pago.id)}
+                  >
+                    🗑️ Eliminar
+                  </button>
+                </td>
               </tr>
-            )}
+            ))}
           </tbody>
         </table>
-      )}
+      </div>
 
-      {/* ✅ Modal de formulario */}
-      {showModal && (
-        <div style={styles.modalOverlay}>
-          <div style={styles.modal}>
-            <h3>{editingPago ? "✏️ Editar Pago" : "➕ Registrar Pago"}</h3>
-            <form onSubmit={handleSubmit} style={styles.form}>
-              <input
-                type="number"
-                placeholder="ID Empleado"
-                value={form.empleado_id}
-                onChange={(e) =>
-                  setForm({ ...form, empleado_id: e.target.value })
-                }
-                style={styles.input}
-                required
-              />
-              <input
-                type="number"
-                placeholder="Periodo"
-                value={form.periodo_id}
-                onChange={(e) =>
-                  setForm({ ...form, periodo_id: e.target.value })
-                }
-                style={styles.input}
-                required
-              />
-              <input
-                type="date"
-                value={form.fecha_pago}
-                onChange={(e) =>
-                  setForm({ ...form, fecha_pago: e.target.value })
-                }
-                style={styles.input}
-                required
-              />
-              <input
-                type="number"
-                placeholder="Monto"
-                value={form.monto}
-                onChange={(e) => setForm({ ...form, monto: e.target.value })}
-                style={styles.input}
-                required
-              />
-              <select
-                value={form.metodo_pago}
-                onChange={(e) =>
-                  setForm({ ...form, metodo_pago: e.target.value })
-                }
-                style={styles.input}
-              >
-                <option value="transferencia">Transferencia</option>
-                <option value="efectivo">Efectivo</option>
-                <option value="cheque">Cheque</option>
-              </select>
-              <select
-                value={form.estado}
-                onChange={(e) =>
-                  setForm({ ...form, estado: e.target.value })
-                }
-                style={styles.input}
-              >
-                <option value="pendiente">Pendiente</option>
-                <option value="pagado">Pagado</option>
-                <option value="anulado">Anulado</option>
-              </select>
+      {/* Modal */}
+      {modalOpen && (
+        <div className="modal-overlay">
+          <div className="modal modal-lg">
+            <h3 style={{ marginBottom: "1rem", textAlign: "center" }}>
+              {editing ? "✏️ Editar Pago" : "💰 Registrar Pago"}
+            </h3>
+
+            <div className="form-grid">
+              <div>
+                <label>Empleado</label>
+                <select
+                  value={form.empleado_id}
+                  onChange={(e) =>
+                    setForm({ ...form, empleado_id: e.target.value })
+                  }
+                >
+                  <option value="">Seleccione empleado</option>
+                  {empleados.map((emp) => (
+                    <option key={emp.id} value={emp.id}>
+                      {emp.nombre_empleado}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label>Periodo</label>
+                <input
+                  type="number"
+                  value={form.periodo_id}
+                  onChange={(e) =>
+                    setForm({ ...form, periodo_id: e.target.value })
+                  }
+                />
+              </div>
+
+              <div>
+                <label>Fecha de Pago</label>
+                <input
+                  type="date"
+                  value={form.fecha_pago}
+                  onChange={(e) =>
+                    setForm({ ...form, fecha_pago: e.target.value })
+                  }
+                />
+              </div>
+
+              <div>
+                <label>Monto</label>
+                <input
+                  type="number"
+                  value={form.monto}
+                  onChange={(e) =>
+                    setForm({ ...form, monto: e.target.value })
+                  }
+                />
+              </div>
+
+              <div>
+                <label>Método de Pago</label>
+                <select
+                  value={form.metodo_pago}
+                  onChange={(e) =>
+                    setForm({ ...form, metodo_pago: e.target.value })
+                  }
+                >
+                  <option value="transferencia">Transferencia</option>
+                  <option value="efectivo">Efectivo</option>
+                  <option value="cheque">Cheque</option>
+                </select>
+              </div>
+
+              <div>
+                <label>Estado</label>
+                <select
+                  value={form.estado}
+                  onChange={(e) =>
+                    setForm({ ...form, estado: e.target.value })
+                  }
+                >
+                  <option value="pendiente">Pendiente</option>
+                  <option value="pagado">Pagado</option>
+                  <option value="anulado">Anulado</option>
+                </select>
+              </div>
+            </div>
+
+            <div style={{ marginTop: "1rem" }}>
+              <label>Observaciones</label>
               <textarea
-                placeholder="Observaciones"
+                rows="3"
                 value={form.observaciones}
                 onChange={(e) =>
                   setForm({ ...form, observaciones: e.target.value })
                 }
-                style={styles.input}
+                style={{ width: "100%", padding: "0.8rem", borderRadius: "6px" }}
               />
+            </div>
 
-              <div style={styles.actions}>
-                <button type="submit" style={styles.saveBtn}>
-                  {editingPago ? "Guardar Cambios" : "Registrar"}
-                </button>
-                <button
-                  type="button"
-                  style={styles.cancelBtn}
-                  onClick={() => setShowModal(false)}
-                >
-                  Cancelar
-                </button>
-              </div>
-            </form>
+            <div className="modal-actions">
+              <button className="btn btn-success" onClick={handleSave}>
+                {editing ? "Actualizar" : "Registrar"}
+              </button>
+              <button
+                className="btn btn-secondary"
+                onClick={() => setModalOpen(false)}
+              >
+                Cancelar
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -257,84 +287,97 @@ export default function ShowPayments() {
   );
 }
 
-const styles = {
-  container: { padding: "2rem", background: "#f4f6f9", minHeight: "100vh" },
-  header: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: "1rem",
-  },
-  title: { fontSize: "1.6rem", fontWeight: "bold", color: "#4b0082" },
-  addBtn: {
-    background: "#4facfe",
-    color: "white",
-    padding: "0.6rem 1.2rem",
-    border: "none",
-    borderRadius: "8px",
-    fontWeight: "bold",
-    cursor: "pointer",
-  },
-  table: {
-    width: "100%",
-    borderCollapse: "collapse",
-    background: "white",
-    borderRadius: "8px",
-    overflow: "hidden",
-  },
-  editBtn: {
-    marginRight: "0.5rem",
-    padding: "0.4rem 0.8rem",
-    border: "none",
-    borderRadius: "6px",
-    background: "#4caf50",
-    color: "white",
-    cursor: "pointer",
-  },
-  deleteBtn: {
-    padding: "0.4rem 0.8rem",
-    border: "none",
-    borderRadius: "6px",
-    background: "#f44336",
-    color: "white",
-    cursor: "pointer",
-  },
-  modalOverlay: {
-    position: "fixed",
-    top: 0,
-    left: 0,
-    width: "100vw",
-    height: "100vh",
-    background: "rgba(0,0,0,0.5)",
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  modal: {
-    background: "white",
-    padding: "2rem",
-    borderRadius: "12px",
-    width: "400px",
-    textAlign: "center",
-  },
-  form: { display: "flex", flexDirection: "column", gap: "1rem" },
-  input: { padding: "0.8rem", border: "1px solid #ccc", borderRadius: "6px" },
-  actions: { display: "flex", justifyContent: "space-between" },
-  saveBtn: {
-    padding: "0.6rem 1.2rem",
-    background: "#4caf50",
-    border: "none",
-    borderRadius: "8px",
-    color: "white",
-    fontWeight: "bold",
-    cursor: "pointer",
-  },
-  cancelBtn: {
-    padding: "0.6rem 1.2rem",
-    background: "#ccc",
-    border: "none",
-    borderRadius: "8px",
-    color: "#333",
-    cursor: "pointer",
-  },
-};
+/* === Estilos CSS (ajustados) === */
+const css = `
+.container {
+  padding: 2rem;
+  background: #f4f6f9;
+  min-height: 100vh;
+}
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+}
+.table th, .table td {
+  border: 1px solid #ddd;
+  padding: 0.8rem;
+  text-align: center;
+  vertical-align: middle;
+  min-width: 100px;
+}
+.table th {
+  background: #f0f0f0;
+}
+.table .observaciones {
+  max-width: 200px;
+  white-space: normal;
+  word-wrap: break-word;
+}
+.btn {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+}
+.btn-primary {
+  background: #4facfe;
+  color: white;
+  margin-bottom: 1rem;
+}
+.btn-warning {
+  background: #fbc02d;
+  color: white;
+  margin-right: 0.5rem;
+}
+.btn-danger {
+  background: #e53935;
+  color: white;
+}
+.btn-success {
+  background: #43a047;
+  color: white;
+}
+.btn-secondary {
+  background: #9e9e9e;
+  color: white;
+}
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+.modal {
+  background: white;
+  padding: 2rem;
+  border-radius: 12px;
+  width: 500px;
+  max-width: 95%;
+}
+.modal-lg {
+  width: 700px;
+}
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+.modal-actions {
+  margin-top: 1.5rem;
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+}
+`;
+
+// Inyectar CSS si no usas archivo separado
+if (typeof document !== "undefined") {
+  const style = document.createElement("style");
+  style.innerHTML = css;
+  document.head.appendChild(style);
+}
