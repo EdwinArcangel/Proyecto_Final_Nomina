@@ -34,32 +34,51 @@ export default function ShowPayments() {
     fetchPagos();
   }, []);
 
-  // ✅ Abrir modal para editar
-  const handleEdit = (pago) => {
-    setEditingPago(pago);
-    setForm({
-      empleado_id: pago.empleado_id,
-      periodo_id: pago.periodo_id,
-      fecha_pago: pago.fecha_pago?.split("T")[0] || "",
-      monto: pago.monto,
-      metodo_pago: pago.metodo_pago,
-      estado: pago.estado,
-      observaciones: pago.observaciones || "",
-    });
+  // ✅ Abrir modal (nuevo o edición)
+  const handleOpenModal = (pago = null) => {
+    if (pago) {
+      // edición
+      setEditingPago(pago);
+      setForm({
+        empleado_id: pago.empleado_id,
+        periodo_id: pago.periodo_id,
+        fecha_pago: pago.fecha_pago?.split("T")[0] || "",
+        monto: pago.monto,
+        metodo_pago: pago.metodo_pago,
+        estado: pago.estado,
+        observaciones: pago.observaciones || "",
+      });
+    } else {
+      // nuevo
+      setEditingPago(null);
+      setForm({
+        empleado_id: "",
+        periodo_id: "",
+        fecha_pago: "",
+        monto: "",
+        metodo_pago: "transferencia",
+        estado: "pendiente",
+        observaciones: "",
+      });
+    }
     setShowModal(true);
   };
 
-  // ✅ Guardar edición
+  // ✅ Guardar (nuevo o edición)
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await api.put(`/pagos/${editingPago.id}`, form);
-      toast.success("✏️ Pago actualizado");
+      if (editingPago) {
+        await api.put(`/pagos/${editingPago.id}`, form);
+        toast.success("✏️ Pago actualizado");
+      } else {
+        await api.post("/pagos", form);
+        toast.success("💰 Pago registrado");
+      }
       setShowModal(false);
-      setEditingPago(null);
       fetchPagos();
     } catch (err) {
-      toast.error("❌ Error actualizando pago");
+      toast.error("❌ Error guardando pago");
     }
   };
 
@@ -77,7 +96,13 @@ export default function ShowPayments() {
 
   return (
     <div style={styles.container}>
-      <h2 style={styles.title}>💰 Gestión de Pagos</h2>
+      {/* Header con botón Registrar */}
+      <div style={styles.header}>
+        <h2 style={styles.title}>💰 Gestión de Pagos</h2>
+        <button style={styles.addBtn} onClick={() => handleOpenModal()}>
+          ➕ Registrar Pago
+        </button>
+      </div>
 
       {loading ? (
         <p>Cargando pagos...</p>
@@ -116,7 +141,7 @@ export default function ShowPayments() {
                   <td>
                     <button
                       style={styles.editBtn}
-                      onClick={() => handleEdit(p)}
+                      onClick={() => handleOpenModal(p)}
                     >
                       ✏️ Editar
                     </button>
@@ -138,12 +163,32 @@ export default function ShowPayments() {
         </table>
       )}
 
-      {/* ✅ Modal de edición */}
+      {/* ✅ Modal de formulario */}
       {showModal && (
         <div style={styles.modalOverlay}>
           <div style={styles.modal}>
-            <h3>✏️ Editar Pago</h3>
+            <h3>{editingPago ? "✏️ Editar Pago" : "➕ Registrar Pago"}</h3>
             <form onSubmit={handleSubmit} style={styles.form}>
+              <input
+                type="number"
+                placeholder="ID Empleado"
+                value={form.empleado_id}
+                onChange={(e) =>
+                  setForm({ ...form, empleado_id: e.target.value })
+                }
+                style={styles.input}
+                required
+              />
+              <input
+                type="number"
+                placeholder="Periodo"
+                value={form.periodo_id}
+                onChange={(e) =>
+                  setForm({ ...form, periodo_id: e.target.value })
+                }
+                style={styles.input}
+                required
+              />
               <input
                 type="date"
                 value={form.fecha_pago}
@@ -194,7 +239,7 @@ export default function ShowPayments() {
 
               <div style={styles.actions}>
                 <button type="submit" style={styles.saveBtn}>
-                  Guardar
+                  {editingPago ? "Guardar Cambios" : "Registrar"}
                 </button>
                 <button
                   type="button"
@@ -214,7 +259,22 @@ export default function ShowPayments() {
 
 const styles = {
   container: { padding: "2rem", background: "#f4f6f9", minHeight: "100vh" },
-  title: { textAlign: "center", color: "#4b0082", marginBottom: "1rem" },
+  header: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: "1rem",
+  },
+  title: { fontSize: "1.6rem", fontWeight: "bold", color: "#4b0082" },
+  addBtn: {
+    background: "#4facfe",
+    color: "white",
+    padding: "0.6rem 1.2rem",
+    border: "none",
+    borderRadius: "8px",
+    fontWeight: "bold",
+    cursor: "pointer",
+  },
   table: {
     width: "100%",
     borderCollapse: "collapse",
