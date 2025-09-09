@@ -1,4 +1,4 @@
-// src/payments/ShowPayments.jsx
+ç// src/payments/ShowPayments.jsx
 import { useState, useEffect } from "react";
 import api from "../utils/api";
 import { toast } from "react-toastify";
@@ -47,7 +47,7 @@ export default function ShowPayments() {
   const handleSave = async () => {
     try {
       if (!form.empleado_id || !form.fecha_pago || !form.monto) {
-        toast.warning("⚠️ Todos los campos obligatorios");
+        toast.warning("⚠️ Completa los campos obligatorios");
         return;
       }
 
@@ -58,6 +58,7 @@ export default function ShowPayments() {
         await api.post("/pagos", form);
         toast.success("💰 Pago registrado");
       }
+
       setModalOpen(false);
       setForm({
         empleado_id: "",
@@ -77,9 +78,17 @@ export default function ShowPayments() {
   };
 
   // Editar
-  const handleEdit = (pago) => {
-    setForm(pago);
-    setEditing(pago.id);
+  const handleEdit = (p) => {
+    setForm({
+      empleado_id: p.empleado_id ?? "",
+      periodo_id: p.periodo_id ?? "",
+      fecha_pago: (p.fecha_pago || "").substring(0, 10),
+      monto: p.monto ?? "",
+      metodo_pago: p.metodo_pago ?? "transferencia",
+      estado: p.estado ?? "pendiente",
+      observaciones: p.observaciones ?? "",
+    });
+    setEditing(p.id);
     setModalOpen(true);
   };
 
@@ -96,8 +105,8 @@ export default function ShowPayments() {
   };
 
   return (
-    <div className="container">
-      <h2 style={{ marginBottom: "1rem" }}>💰 Gestión de Pagos</h2>
+    <div className="pay-root">
+      <h2 className="title">💰 Gestión de Pagos</h2>
 
       <button
         className="btn btn-primary"
@@ -134,32 +143,26 @@ export default function ShowPayments() {
             </tr>
           </thead>
           <tbody>
-            {pagos.map((pago) => (
-              <tr key={pago.id}>
-                <td>{pago.id}</td>
-                <td>{pago.empleado_nombre}</td>
-                <td>{pago.periodo_id}</td>
-                <td>{pago.fecha_pago?.substring(0, 10)}</td>
+            {pagos.map((p) => (
+              <tr key={p.id}>
+                <td>{p.id}</td>
+                <td>{p.empleado_nombre}</td>
+                <td>{p.periodo_id ?? "—"}</td>
+                <td>{p.fecha_pago?.substring(0, 10)}</td>
                 <td>
                   {new Intl.NumberFormat("es-CO", {
                     style: "currency",
                     currency: "COP",
-                  }).format(pago.monto)}
+                  }).format(Number(p.monto || 0))}
                 </td>
-                <td>{pago.metodo_pago}</td>
-                <td>{pago.estado}</td>
-                <td className="observaciones">{pago.observaciones}</td>
+                <td>{p.metodo_pago}</td>
+                <td>{p.estado}</td>
+                <td className="observaciones">{p.observaciones}</td>
                 <td>
-                  <button
-                    className="btn btn-warning"
-                    onClick={() => handleEdit(pago)}
-                  >
+                  <button className="btn btn-warning" onClick={() => handleEdit(p)}>
                     ✏️ Editar
                   </button>
-                  <button
-                    className="btn btn-danger"
-                    onClick={() => handleDelete(pago.id)}
-                  >
+                  <button className="btn btn-danger" onClick={() => handleDelete(p.id)}>
                     🗑️ Eliminar
                   </button>
                 </td>
@@ -182,9 +185,7 @@ export default function ShowPayments() {
                 <label>Empleado</label>
                 <select
                   value={form.empleado_id}
-                  onChange={(e) =>
-                    setForm({ ...form, empleado_id: e.target.value })
-                  }
+                  onChange={(e) => setForm({ ...form, empleado_id: e.target.value })}
                 >
                   <option value="">Seleccione empleado</option>
                   {empleados.map((emp) => (
@@ -200,9 +201,7 @@ export default function ShowPayments() {
                 <input
                   type="number"
                   value={form.periodo_id}
-                  onChange={(e) =>
-                    setForm({ ...form, periodo_id: e.target.value })
-                  }
+                  onChange={(e) => setForm({ ...form, periodo_id: e.target.value })}
                 />
               </div>
 
@@ -211,9 +210,7 @@ export default function ShowPayments() {
                 <input
                   type="date"
                   value={form.fecha_pago}
-                  onChange={(e) =>
-                    setForm({ ...form, fecha_pago: e.target.value })
-                  }
+                  onChange={(e) => setForm({ ...form, fecha_pago: e.target.value })}
                 />
               </div>
 
@@ -222,9 +219,7 @@ export default function ShowPayments() {
                 <input
                   type="number"
                   value={form.monto}
-                  onChange={(e) =>
-                    setForm({ ...form, monto: e.target.value })
-                  }
+                  onChange={(e) => setForm({ ...form, monto: e.target.value })}
                 />
               </div>
 
@@ -232,9 +227,7 @@ export default function ShowPayments() {
                 <label>Método de Pago</label>
                 <select
                   value={form.metodo_pago}
-                  onChange={(e) =>
-                    setForm({ ...form, metodo_pago: e.target.value })
-                  }
+                  onChange={(e) => setForm({ ...form, metodo_pago: e.target.value })}
                 >
                   <option value="transferencia">Transferencia</option>
                   <option value="efectivo">Efectivo</option>
@@ -246,9 +239,7 @@ export default function ShowPayments() {
                 <label>Estado</label>
                 <select
                   value={form.estado}
-                  onChange={(e) =>
-                    setForm({ ...form, estado: e.target.value })
-                  }
+                  onChange={(e) => setForm({ ...form, estado: e.target.value })}
                 >
                   <option value="pendiente">Pendiente</option>
                   <option value="pagado">Pagado</option>
@@ -262,9 +253,7 @@ export default function ShowPayments() {
               <textarea
                 rows="3"
                 value={form.observaciones}
-                onChange={(e) =>
-                  setForm({ ...form, observaciones: e.target.value })
-                }
+                onChange={(e) => setForm({ ...form, observaciones: e.target.value })}
                 style={{ width: "100%", padding: "0.8rem", borderRadius: "6px" }}
               />
             </div>
@@ -273,10 +262,7 @@ export default function ShowPayments() {
               <button className="btn btn-success" onClick={handleSave}>
                 {editing ? "Actualizar" : "Registrar"}
               </button>
-              <button
-                className="btn btn-secondary"
-                onClick={() => setModalOpen(false)}
-              >
+              <button className="btn btn-secondary" onClick={() => setModalOpen(false)}>
                 Cancelar
               </button>
             </div>
@@ -287,97 +273,98 @@ export default function ShowPayments() {
   );
 }
 
-/* === Estilos CSS (ajustados) === */
+/* === Estilos locales: fuerzan texto oscuro/fondo blanco en la tabla y modal === */
 const css = `
-.container {
+.pay-root {
   padding: 2rem;
   background: #f4f6f9;
   min-height: 100vh;
+  color: #1f2937; /* texto base */
 }
-.table {
+
+.pay-root .title {
+  margin-bottom: 1rem;
+}
+
+.pay-root .table {
   width: 100%;
   border-collapse: collapse;
   margin-top: 1rem;
 }
-.table th, .table td {
-  border: 1px solid #ddd;
+.pay-root .table th,
+.pay-root .table td {
+  border: 1px solid #e5e7eb;
   padding: 0.8rem;
   text-align: center;
   vertical-align: middle;
   min-width: 100px;
+  color: #1f2937 !important;      /* evita texto blanco heredado */
+  background: #ffffff !important; /* fondo legible */
 }
-.table th {
-  background: #f0f0f0;
+.pay-root .table thead th {
+  background: #f5f6ff !important;
+  color: #374151 !important;
+  font-weight: 600;
 }
-.table .observaciones {
-  max-width: 200px;
+.pay-root .table .observaciones {
+  max-width: 260px;
   white-space: normal;
   word-wrap: break-word;
 }
-.btn {
+.pay-root .table tbody tr:hover {
+  background: #f9fbff !important;
+}
+
+/* Botones (paleta Novedades) */
+.pay-root .btn {
   padding: 0.5rem 1rem;
   border: none;
   border-radius: 6px;
   cursor: pointer;
-  font-weight: bold;
+  font-weight: 700;
 }
-.btn-primary {
-  background: #4facfe;
-  color: white;
-  margin-bottom: 1rem;
-}
-.btn-warning {
-  background: #fbc02d;
-  color: white;
-  margin-right: 0.5rem;
-}
-.btn-danger {
-  background: #e53935;
-  color: white;
-}
-.btn-success {
-  background: #43a047;
-  color: white;
-}
-.btn-secondary {
-  background: #9e9e9e;
-  color: white;
-}
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.6);
-  display: flex;
-  justify-content: center;
-  align-items: center;
+.pay-root .btn-primary { background: #4facfe; color: #fff; margin-bottom: 1rem; }
+.pay-root .btn-warning { background: #facc15; color: #1f2937; margin-right: .5rem; }
+.pay-root .btn-danger  { background: #ef4444; color: #fff; }
+.pay-root .btn-success { background: #22c55e; color: #fff; }
+.pay-root .btn-secondary { background: #9ca3af; color: #fff; }
+
+/* Modal */
+.pay-root .modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.55);
+  display: flex; justify-content: center; align-items: center;
   z-index: 1000;
 }
-.modal {
-  background: white;
+.pay-root .modal {
+  background: #fff;
   padding: 2rem;
-  border-radius: 12px;
-  width: 500px;
-  max-width: 95%;
+  border-radius: 14px;
+  width: 560px;
+  max-width: 96%;
+  box-shadow: 0 10px 30px rgba(0,0,0,.12);
 }
-.modal-lg {
-  width: 700px;
+.pay-root .modal-lg { width: 760px; }
+.pay-root .form-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;
 }
-.form-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
+.pay-root label { font-weight: 600; color: #374151; display: block; margin-bottom: .35rem; }
+.pay-root input, .pay-root select, .pay-root textarea {
+  width: 100%; padding: .75rem; border: 1px solid #d1d5db; border-radius: 8px; background: #fff; color: #111827;
 }
-.modal-actions {
-  margin-top: 1.5rem;
-  display: flex;
-  justify-content: flex-end;
-  gap: 1rem;
+.pay-root input::placeholder, .pay-root textarea::placeholder { color: #9ca3af; }
+.pay-root .modal-actions {
+  margin-top: 1.25rem; display: flex; justify-content: flex-end; gap: 1rem;
 }
 `;
 
-// Inyectar CSS si no usas archivo separado
+// Inyectar CSS si no usas archivo separado (con guard para no duplicar)
 if (typeof document !== "undefined") {
-  const style = document.createElement("style");
-  style.innerHTML = css;
-  document.head.appendChild(style);
+  const styleId = "payments-local-css";
+  if (!document.getElementById(styleId)) {
+    const style = document.createElement("style");
+    style.id = styleId;
+    style.innerHTML = css;
+    document.head.appendChild(style);
+  }
 }
