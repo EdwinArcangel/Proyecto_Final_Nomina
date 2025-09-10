@@ -117,7 +117,8 @@ Otros:
 3. Iniciar el servidor
    - Ejecutar el comando node server.js
    - Al iniciar el servidor se crea automáticamente la base de datos nomina_db si no existe.
-   - También se generan tablas iniciales y registros de prueba (empleados y usuario).
+   - También se generan tablas iniciales y registros de prueba (usuario de prueba: admin@nomina.com password: admin123).
+   
 
 4. Abrir el frontend
    - Abre  la url http://localhost:5173/ en tu navegador.
@@ -125,7 +126,7 @@ Otros:
 
 ------------------------------------- VIDEO EXPLICATIVO DE INSTALACIÓN Y FUNCIONAMIENTO DEL SOFTWARE--------------------------
 
-
+  - Video 
      https://vimeo.com/1114750546
 --------------------------------------------------------------------------------------------------------------------------------   
 🧑‍💻 Herramientas recomendadas para versionamiento y desarrollo
