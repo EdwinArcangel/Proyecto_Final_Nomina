@@ -11,7 +11,6 @@ import ShowUsers from "./users/ShowUsers";
 import ShowNovedades from "./novedades/ShowNovedades";
 import ShowPayments from "./payments/ShowPayments";
 import ShowReports from "./reportes/ShowReports";
-import ShowLiquidacion from "./payments/ShowLiquidacion";
 
 
 // Componente para proteger rutas privadas
@@ -106,14 +105,6 @@ function App() {
           }
         />
 
-        <Route
-  path="/liquidacion"
-  element={
-    <PrivateRoute>
-      <ShowLiquidacion />
-    </PrivateRoute>
-  }
-/>
 
         {/* Ruta por defecto → redirigir a login */}
         <Route path="/" element={<Navigate to="/login" replace />} />

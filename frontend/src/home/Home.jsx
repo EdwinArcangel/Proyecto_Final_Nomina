@@ -85,7 +85,6 @@ export default function Home({ user }) {
             { path: "/novedades", label: "📌 Novedades" },
             { path: "/pagos", label: "💰 Pagos" },
             { path: "/reportes", label: "📑 Reportes" },
-            { path: "/liquidacion", label: "🧾 Liquidar Empleado" }, // 👈 agregado
           ].map((item, idx) => (
             <li
               key={idx}
