@@ -121,6 +121,8 @@ Otros:
    
 
 4. Abrir el frontend
+   - 1: cd frontend
+   - 2: npm run dev
    - Abre  la url http://localhost:5173/ en tu navegador.
    - El frontend se comunicará con el backend
 
