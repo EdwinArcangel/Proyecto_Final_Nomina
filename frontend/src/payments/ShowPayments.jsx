@@ -346,23 +346,27 @@ export default function ShowPayments() {
   };
 
   // Autorrelleno al escoger empleado (intenta mapear doc/cargo si existen)
-  const onChangeEmpleado = (empleadoId) => {
-    const found = empleados.find((e) => Number(e.id) === Number(empleadoId));
-    const doc =
-      found?.numero_identificacion ??
-      found?.documento ??
-      found?.cc ??
-      found?.nit ??
-      found?.numero_documento ??
-      "";
-    const rol = found?.cargo ?? found?.rol ?? "";
-    setForm((f) => ({
-      ...f,
-      empleado_id: empleadoId,
-      numero_identificacion: f.numero_identificacion || doc,
-      cargo: f.cargo || rol,
-    }));
-  };
+const onChangeEmpleado = (empleadoId) => {
+  const found = empleados.find((e) => Number(e.id) === Number(empleadoId));
+
+  const doc =
+    found?.numero_identificacion ??
+    found?.documento ??
+    found?.cc ??
+    found?.nit ??
+    found?.numero_documento ??
+    "";
+  const rol = found?.cargo ?? found?.rol ?? "";
+  const salario = found?.salario_base ?? "";
+
+  setForm((f) => ({
+    ...f,
+    empleado_id: empleadoId,
+    numero_identificacion: doc, 
+    cargo: rol,                  
+    salario_base: salario,      
+  }));
+};
 
   // Filtro + búsqueda
   const filtered = useMemo(() => {
