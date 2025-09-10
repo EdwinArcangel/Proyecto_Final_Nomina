@@ -330,29 +330,6 @@ export default function ShowEmployees() {
         </table>
       </div>
 
-      {/* Paginación */}
-      {!loading && filtered.length > 0 && (
-        <div className="pagination">
-          <button
-            className="btn btn-light"
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-            disabled={pageClamped === 1}
-          >
-            ◀ Anterior
-          </button>
-          <span className="muted">
-            Página {pageClamped} de {totalPages}
-          </span>
-          <button
-            className="btn btn-light"
-            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-            disabled={pageClamped === totalPages}
-          >
-            Siguiente ▶
-          </button>
-        </div>
-      )}
-
       {/* Modal Crear/Editar */}
       {modalOpen && (
         <div className="modal-overlay" ref={modalRef} role="dialog" aria-modal="true">
@@ -572,9 +549,6 @@ select.input option{color:var(--text);background:#fff;}
   word-break:break-word;
   line-height:1.2;
 }
-
-/* Paginación */
-.pagination{display:flex;align-items:center;gap:1rem;justify-content:flex-end;margin-top:1rem;}
 
 /* Botones generales */
 .btn{

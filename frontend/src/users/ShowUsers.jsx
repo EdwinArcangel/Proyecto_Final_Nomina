@@ -161,14 +161,6 @@ export default function ShowUsers() {
     return data;
   }, [users, q, sortBy, sortDir]);
 
-  // Paginación
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const pageClamped = Math.min(page, totalPages);
-  const pageData = useMemo(() => {
-    const start = (pageClamped - 1) * PAGE_SIZE;
-    return filtered.slice(start, start + PAGE_SIZE);
-  }, [filtered, pageClamped]);
-
   useEffect(() => setPage(1), [q]);
 
   // Cerrar modal con Escape y clic fuera
@@ -293,26 +285,7 @@ export default function ShowUsers() {
         </table>
       </div>
 
-      {/* Paginación */}
-      {!loading && filtered.length > 0 && (
-        <div className="pagination">
-          <button
-            className="btn btn-light"
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-            disabled={pageClamped === 1}
-          >
-            ◀ Anterior
-          </button>
-          <span className="muted">Página {pageClamped} de {totalPages}</span>
-          <button
-            className="btn btn-light"
-            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-            disabled={pageClamped === totalPages}
-          >
-            Siguiente ▶
-          </button>
-        </div>
-      )}
+  
 
       {/* Modal Crear/Editar */}
       {modalOpen && (
@@ -458,9 +431,6 @@ select.input option{color:var(--text);background:#fff;}
   word-break:break-word;
   line-height:1.2;
 }
-
-/* Paginación */
-.pagination{display:flex;align-items:center;gap:1rem;justify-content:flex-end;margin-top:1rem;}
 
 /* Botones generales */
 .btn{
