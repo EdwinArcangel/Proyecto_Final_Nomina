@@ -161,6 +161,14 @@ export default function ShowUsers() {
     return data;
   }, [users, q, sortBy, sortDir]);
 
+  // Paginación
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const pageClamped = Math.min(page, totalPages);
+  const pageData = useMemo(() => {
+    const start = (pageClamped - 1) * PAGE_SIZE;
+    return filtered.slice(start, start + PAGE_SIZE);
+  }, [filtered, pageClamped]);
+
   useEffect(() => setPage(1), [q]);
 
   // Cerrar modal con Escape y clic fuera
@@ -284,8 +292,6 @@ export default function ShowUsers() {
           </tbody>
         </table>
       </div>
-
-  
 
       {/* Modal Crear/Editar */}
       {modalOpen && (
@@ -416,7 +422,7 @@ select.input option{color:var(--text);background:#fff;}
   font-size: .9rem;
   border-radius: .5rem;
   box-shadow: none;
-  margin-right: .34rem;
+  margin-right: .3rem;
 }
 .table .actions .btn:last-child {
   margin-right: 0;
@@ -431,6 +437,9 @@ select.input option{color:var(--text);background:#fff;}
   word-break:break-word;
   line-height:1.2;
 }
+
+/* Paginación */
+.pagination{display:flex;align-items:center;gap:1rem;justify-content:flex-end;margin-top:1rem;}
 
 /* Botones generales */
 .btn{

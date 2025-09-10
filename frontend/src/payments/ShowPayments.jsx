@@ -589,29 +589,7 @@ const onChangeEmpleado = (empleadoId) => {
         </table>
       </div>
 
-      {/* Paginación */}
-      {!loading && filtered.length > 0 && (
-        <div className="pagination">
-          <button
-            className="btn btn-light"
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-            disabled={pageClamped === 1}
-          >
-            ◀ Anterior
-          </button>
-          <span className="muted">
-            Página {pageClamped} de {totalPages}
-          </span>
-          <button
-            className="btn btn-light"
-            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-            disabled={pageClamped === totalPages}
-          >
-            Siguiente ▶
-          </button>
-        </div>
-      )}
-
+     
       {/* Modal */}
       {modalOpen && (
         <div className="modal-overlay" ref={modalRef} role="dialog" aria-modal="true">
