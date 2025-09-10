@@ -26,16 +26,35 @@ export default function ShowPayments() {
   // Modal / edición
   const [modalOpen, setModalOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
-  const [editingWasPagado, setEditingWasPagado] = useState(false); // ✅ nuevo
+  const [editingWasPagado, setEditingWasPagado] = useState(false);
   const modalRef = useRef(null);
 
+  // ====== NUEVO: campos del formulario ampliado ======
   const [form, setForm] = useState({
+    // Info básica
     empleado_id: "",
+    numero_identificacion: "",
+    cargo: "",
+    periodo_pago: "mensual",          // "quincenal" | "mensual"
+    fecha_emision: new Date().toISOString().substring(0, 10),
+
+    // Relación con tu esquema actual (opcional si tu backend lo usa):
     periodo_id: "",
+
+    // Fechas y método
     fecha_pago: "",
-    monto: "",
     metodo_pago: "transferencia",
-    // estado no se edita en UI, pero lo enviamos en el PUT/POST:
+
+    // Devengados (percepciones)
+    salario_base: "",
+    auxilio_transporte: "",
+    horas_extras: "",
+    comisiones: "",
+    bonificaciones_no_salariales: "",
+    otros_conceptos: "",
+    otros_detalle: "",
+
+    // Estado/otros
     estado: "pendiente",
     observaciones: "",
   });
@@ -49,6 +68,30 @@ export default function ShowPayments() {
       }),
     []
   );
+
+  const num = (v) => {
+    const n = Number(String(v).replace(/,/g, "").trim());
+    return Number.isFinite(n) ? n : 0;
+  };
+
+  // Total devengados (se usará como "monto" al guardar)
+  const totalDevengados = useMemo(() => {
+    return (
+      num(form.salario_base) +
+      num(form.auxilio_transporte) +
+      num(form.horas_extras) +
+      num(form.comisiones) +
+      num(form.bonificaciones_no_salariales) +
+      num(form.otros_conceptos)
+    );
+  }, [
+    form.salario_base,
+    form.auxilio_transporte,
+    form.horas_extras,
+    form.comisiones,
+    form.bonificaciones_no_salariales,
+    form.otros_conceptos,
+  ]);
 
   const fetchPagos = useCallback(async () => {
     try {
@@ -84,10 +127,24 @@ export default function ShowPayments() {
   const resetForm = () =>
     setForm({
       empleado_id: "",
+      numero_identificacion: "",
+      cargo: "",
+      periodo_pago: "mensual",
+      fecha_emision: new Date().toISOString().substring(0, 10),
+
       periodo_id: "",
+
       fecha_pago: "",
-      monto: "",
       metodo_pago: "transferencia",
+
+      salario_base: "",
+      auxilio_transporte: "",
+      horas_extras: "",
+      comisiones: "",
+      bonificaciones_no_salariales: "",
+      otros_conceptos: "",
+      otros_detalle: "",
+
       estado: "pendiente",
       observaciones: "",
     });
@@ -101,7 +158,6 @@ export default function ShowPayments() {
 
   // Acciones CRUD
   const handleSave = async () => {
-    // Validaciones mínimas
     if (!form.empleado_id) {
       toast.warning("⚠️ Selecciona un empleado");
       return;
@@ -110,29 +166,51 @@ export default function ShowPayments() {
       toast.warning("⚠️ La fecha de pago es obligatoria");
       return;
     }
-    const montoNumber = Number(form.monto);
-    if (!montoNumber || montoNumber <= 0) {
-      toast.warning("⚠️ El monto debe ser mayor a 0");
+    if (!form.fecha_emision) {
+      toast.warning("⚠️ La fecha de emisión es obligatoria");
+      return;
+    }
+    if (totalDevengados <= 0) {
+      toast.warning("⚠️ El total de devengados debe ser mayor a 0");
       return;
     }
 
-    // Estado final:
-    // - Nuevo -> "pendiente"
-    // - Edición: si antes estaba "pagado", lo reabrimos a "pendiente" para habilitar "Pagar"
-    //            si no, conservamos el estado actual del form
+    // Si estaba pagado y se modifica, reabrimos a pendiente
     const nextEstado = !editingId
       ? "pendiente"
       : editingWasPagado
       ? "pendiente"
       : form.estado;
 
-    // Normalizamos tipos
+    // Payload: mantenemos compat con tu API (monto = totalDevengados)
     const payload = {
-      ...form,
       empleado_id: Number(form.empleado_id),
       periodo_id: form.periodo_id ? Number(form.periodo_id) : null,
-      monto: montoNumber,
+
+      // Nuevos campos informativos
+      numero_identificacion: form.numero_identificacion || null,
+      cargo: form.cargo || null,
+      periodo_pago: form.periodo_pago,
+      fecha_emision: form.fecha_emision,
+
+      // Fechas, método y estado
+      fecha_pago: form.fecha_pago,
+      metodo_pago: form.metodo_pago,
       estado: nextEstado,
+
+      // Total a pagar
+      monto: totalDevengados,
+
+      // Detalle de devengados (en plano por si tu API los acepta)
+      salario_base: num(form.salario_base),
+      auxilio_transporte: num(form.auxilio_transporte),
+      horas_extras: num(form.horas_extras),
+      comisiones: num(form.comisiones),
+      bonificaciones_no_salariales: num(form.bonificaciones_no_salariales),
+      otros_conceptos: num(form.otros_conceptos),
+      otros_detalle: form.otros_detalle || "",
+
+      observaciones: form.observaciones,
     };
 
     try {
@@ -140,7 +218,7 @@ export default function ShowPayments() {
         await api.put(`/pagos/${editingId}`, payload);
         toast.success(
           editingWasPagado
-            ? "✏️ Registro Actualizado"
+            ? "✏️ Pago actualizado y reabierto (pendiente)"
             : "✏️ Pago actualizado"
         );
       } else {
@@ -158,15 +236,38 @@ export default function ShowPayments() {
   const handleEdit = (pago) => {
     setForm({
       empleado_id: pago.empleado_id ?? "",
+      // intentamos mapear si vienen en el API; si no, quedan vacíos editables
+      numero_identificacion:
+        pago.numero_identificacion ??
+        pago.documento ??
+        pago.cc ??
+        pago.nit ??
+        pago.numero_documento ??
+        "",
+      cargo: pago.cargo ?? pago.rol ?? "",
+      periodo_pago: pago.periodo_pago ?? "mensual",
+      fecha_emision: pago.fecha_emision?.substring(0, 10) ??
+        new Date().toISOString().substring(0, 10),
+
       periodo_id: pago.periodo_id ?? "",
+
       fecha_pago: pago.fecha_pago?.substring(0, 10) ?? "",
-      monto: pago.monto ?? "",
       metodo_pago: pago.metodo_pago ?? "transferencia",
-      estado: pago.estado ?? "pendiente", // se conserva, no editable en UI
+
+      // Si no tienes los desgloses guardados, prellenamos con monto como salario_base
+      salario_base: pago.salario_base ?? pago.monto ?? "",
+      auxilio_transporte: pago.auxilio_transporte ?? "",
+      horas_extras: pago.horas_extras ?? "",
+      comisiones: pago.comisiones ?? "",
+      bonificaciones_no_salariales: pago.bonificaciones_no_salariales ?? "",
+      otros_conceptos: pago.otros_conceptos ?? "",
+      otros_detalle: pago.otros_detalle ?? "",
+
+      estado: pago.estado ?? "pendiente",
       observaciones: pago.observaciones ?? "",
     });
     setEditingId(pago.id);
-    setEditingWasPagado((pago.estado || "").toLowerCase() === "pagado"); // ✅ nuevo
+    setEditingWasPagado((pago.estado || "").toLowerCase() === "pagado");
     setModalOpen(true);
   };
 
@@ -236,12 +337,31 @@ export default function ShowPayments() {
         estado: "pagado",
         observaciones: (pago.observaciones || "").trim(),
       });
-      toast.success("✔ Pago exitoso");
+      toast.success("✔ Pago Exitoso");
       fetchPagos();
     } catch (err) {
       toast.error("❌ No se pudo marcar como pagado");
       console.error(err);
     }
+  };
+
+  // Autorrelleno al escoger empleado (intenta mapear doc/cargo si existen)
+  const onChangeEmpleado = (empleadoId) => {
+    const found = empleados.find((e) => Number(e.id) === Number(empleadoId));
+    const doc =
+      found?.numero_identificacion ??
+      found?.documento ??
+      found?.cc ??
+      found?.nit ??
+      found?.numero_documento ??
+      "";
+    const rol = found?.cargo ?? found?.rol ?? "";
+    setForm((f) => ({
+      ...f,
+      empleado_id: empleadoId,
+      numero_identificacion: f.numero_identificacion || doc,
+      cargo: f.cargo || rol,
+    }));
   };
 
   // Filtro + búsqueda
@@ -285,11 +405,9 @@ export default function ShowPayments() {
   }, [filtered, pageClamped]);
 
   useEffect(() => {
-    // Reset de página si cambian filtros/búsqueda
     setPage(1);
   }, [q, fEstado]);
 
-  // Cerrar modal con Escape y clic fuera
   useEffect(() => {
     if (!modalOpen) return;
     const onKey = (e) => e.key === "Escape" && closeModal();
@@ -498,15 +616,15 @@ export default function ShowPayments() {
               {editingId ? "✏️ Editar Pago" : "💰 Registrar Pago"}
             </h3>
 
+            {/* ====== Información del Empleado y Periodo ====== */}
+            <h4 className="section-title">Información del Empleado y Periodo</h4>
             <div className="form-grid">
               <div>
-                <label htmlFor="empleado_id">Empleado</label>
+                <label htmlFor="empleado_id">Nombre del Empleado</label>
                 <select
                   id="empleado_id"
                   value={form.empleado_id}
-                  onChange={(e) =>
-                    setForm({ ...form, empleado_id: e.target.value })
-                  }
+                  onChange={(e) => onChangeEmpleado(e.target.value)}
                 >
                   <option value="">Seleccione empleado</option>
                   {empleados.map((emp) => (
@@ -518,7 +636,51 @@ export default function ShowPayments() {
               </div>
 
               <div>
-                <label htmlFor="periodo_id">Periodo</label>
+                <label htmlFor="numero_identificacion">Número de Identificación (CC/NIT)</label>
+                <input
+                  id="numero_identificacion"
+                  value={form.numero_identificacion}
+                  onChange={(e) =>
+                    setForm({ ...form, numero_identificacion: e.target.value })
+                  }
+                />
+              </div>
+
+              <div>
+                <label htmlFor="cargo">Cargo</label>
+                <input
+                  id="cargo"
+                  value={form.cargo}
+                  onChange={(e) => setForm({ ...form, cargo: e.target.value })}
+                />
+              </div>
+
+              <div>
+                <label htmlFor="periodo_pago">Período de Pago</label>
+                <select
+                  id="periodo_pago"
+                  value={form.periodo_pago}
+                  onChange={(e) => setForm({ ...form, periodo_pago: e.target.value })}
+                >
+                  <option value="quincenal">Quincenal</option>
+                  <option value="mensual">Mensual</option>
+                </select>
+              </div>
+
+              <div>
+                <label htmlFor="fecha_emision">Fecha de Emisión</label>
+                <input
+                  id="fecha_emision"
+                  type="date"
+                  value={form.fecha_emision}
+                  max={new Date().toISOString().substring(0, 10)}
+                  onChange={(e) => setForm({ ...form, fecha_emision: e.target.value })}
+                />
+              </div>
+
+              {/* Si tu backend usa un ID de periodo */}
+              <div>
+                <label htmlFor="periodo_id">ID de Periodo (opcional)</label>
                 <input
                   id="periodo_id"
                   inputMode="numeric"
@@ -527,57 +689,141 @@ export default function ShowPayments() {
                   onChange={(e) =>
                     setForm({ ...form, periodo_id: e.target.value })
                   }
-                  placeholder="Ej: 202501"
                 />
               </div>
+            </div>
 
+            {/* ====== Detalles de Percepciones (Devengados) ====== */}
+            <div className="form-grid">
               <div>
-                <label htmlFor="fecha_pago">Fecha de Pago</label>
+                <label htmlFor="salario_base">Salario Base</label>
                 <input
-                  id="fecha_pago"
-                  type="date"
-                  value={form.fecha_pago}
-                  max={new Date().toISOString().substring(0, 10)}
-                  onChange={(e) =>
-                    setForm({ ...form, fecha_pago: e.target.value })
-                  }
-                />
-              </div>
-
-              <div>
-                <label htmlFor="monto">Monto</label>
-                <input
-                  id="monto"
+                  id="salario_base"
                   type="number"
-                  min="1"
+                  min="0"
                   step="1"
-                  value={form.monto}
-                  onChange={(e) =>
-                    setForm({ ...form, monto: e.target.value })
-                  }
-                  onBlur={() => {
-                    const n = Number(form.monto);
-                    if (!n || n <= 0) setForm((f) => ({ ...f, monto: "" }));
-                  }}
+                  value={form.salario_base}
+                  onChange={(e) => setForm({ ...form, salario_base: e.target.value })}
                 />
               </div>
 
               <div>
-                <label htmlFor="metodo_pago">Método de Pago</label>
-                <select
-                  id="metodo_pago"
-                  value={form.metodo_pago}
+                <label htmlFor="auxilio_transporte">Auxilio de Transporte (si aplica)</label>
+                <input
+                  id="auxilio_transporte"
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={form.auxilio_transporte}
                   onChange={(e) =>
-                    setForm({ ...form, metodo_pago: e.target.value })
+                    setForm({ ...form, auxilio_transporte: e.target.value })
                   }
-                >
-                  <option value="transferencia">Transferencia</option>
-                  <option value="efectivo">Efectivo</option>
-                  <option value="cheque">Cheque</option>
-                </select>
+                />
               </div>
 
-              {/* Estado NO editable en UI; se conserva/impone internamente */}
+              <div>
+                <label htmlFor="horas_extras">Horas Extras</label>
+                <input
+                  id="horas_extras"
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={form.horas_extras}
+                  onChange={(e) =>
+                    setForm({ ...form, horas_extras: e.target.value })
+                  }
+                />
+              </div>
+
+              <div>
+                <label htmlFor="comisiones">Comisiones</label>
+                <input
+                  id="comisiones"
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={form.comisiones}
+                  onChange={(e) =>
+                    setForm({ ...form, comisiones: e.target.value })
+                  }
+                />
+              </div>
+
+              <div>
+                <label htmlFor="bonificaciones_no_salariales">Bonificaciones</label>
+                <input
+                  id="bonificaciones_no_salariales"
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={form.bonificaciones_no_salariales}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      bonificaciones_no_salariales: e.target.value,
+                    })
+                  }
+                />
+              </div>
+
+              <div>
+                <label htmlFor="otros_conceptos">Otros conceptos</label>
+                <input
+                  id="otros_conceptos"
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={form.otros_conceptos}
+                  onChange={(e) =>
+                    setForm({ ...form, otros_conceptos: e.target.value })
+                  }
+                />
+              </div>
+
+              <div style={{ gridColumn: "1 / -1" }}>
+                <label htmlFor="otros_detalle">Detalle de “Otros conceptos”</label>
+                <input
+                  id="otros_detalle"
+                  value={form.otros_detalle}
+                  onChange={(e) => setForm({ ...form, otros_detalle: e.target.value })}
+                />
+              </div>
+            </div>
+
+            {/* ====== Totales / Pago ====== */}
+            <div className="totales-card">
+              <div className="tot-line">
+      
+                <strong>{formatterCOP.format(totalDevengados)}</strong>
+              </div>
+              <div className="tot-grid">
+                <div>
+                  <label htmlFor="fecha_pago">Fecha de Pago</label>
+                  <input
+                    id="fecha_pago"
+                    type="date"
+                    value={form.fecha_pago}
+                    max={new Date().toISOString().substring(0, 10)}
+                    onChange={(e) =>
+                      setForm({ ...form, fecha_pago: e.target.value })
+                    }
+                  />
+                </div>
+                <div>
+                  <label htmlFor="metodo_pago">Método de Pago</label>
+                  <select
+                    id="metodo_pago"
+                    value={form.metodo_pago}
+                    onChange={(e) =>
+                      setForm({ ...form, metodo_pago: e.target.value })
+                    }
+                  >
+                    <option value="transferencia">Transferencia</option>
+                    <option value="efectivo">Efectivo</option>
+                    <option value="cheque">Cheque</option>
+                  </select>
+                </div>
+              </div>
             </div>
 
             <div style={{ marginTop: "1rem" }}>
@@ -590,7 +836,6 @@ export default function ShowPayments() {
                   setForm({ ...form, observaciones: e.target.value })
                 }
                 style={{ width: "100%", padding: "0.8rem", borderRadius: "6px" }}
-                placeholder="Notas internas, referencias, etc."
               />
             </div>
 
@@ -641,7 +886,6 @@ function MetodoBadge({ value }) {
       : val === "cheque"
       ? "cheque"
       : value || "—";
-  // Mismo look & feel que Estado (versión suave)
   return <span className="badge method">{label}</span>;
 }
 
@@ -667,136 +911,95 @@ const styles = `
   min-height: 100vh;
   color: var(--text);
 }
+.header{display:flex;align-items:center;justify-content:space-between;gap:1rem;}
+.title{margin:0;}
+.subtitle{margin:.25rem 0 0;color:var(--muted);}
+.muted{color:var(--muted);}
 
-.header{
-  display:flex; align-items:center; justify-content:space-between; gap:1rem;
-}
-.title{ margin:0; }
-.subtitle{ margin:.25rem 0 0; color:var(--muted); }
-.muted{ color: var(--muted); }
+/* Toolbar */
+.toolbar{display:flex;gap:.75rem;flex-wrap:wrap;margin-top:1rem;position:relative;z-index:10;}
+.input{padding:.6rem .8rem;border:1px solid var(--border);border-radius:.6rem;background:#fff;color:var(--text);}
+.input-sm{padding:.45rem .65rem; font-size:.9rem;}   /* inputs más compactos */
+.btn-sm{padding:.35rem .6rem; font-size:.85rem;}
+.input::placeholder{font-size:.9rem; color:var(--muted);}
+select.input option{color:var(--text);background:#fff;}
+.sorter{display:flex;gap:.5rem;align-items:center;}
+.small-label{font-size:.9rem;}
 
-.toolbar{
-  display:flex; gap:.75rem; flex-wrap:wrap; margin-top:1rem;
-  position: relative; z-index: 10;
-}
-.input{
-  padding:.6rem .8rem; border:1px solid var(--border); border-radius:.6rem; background:#fff;
-  color: var(--text);
-}
-.sorter{ display:flex; gap:.5rem; align-items:center; }
-.label-sm{ font-size:.9rem; }
+/* Tabla */
+.table-wrap{background:var(--card);border:1px solid var(--border);border-radius:1rem;margin-top:1rem;overflow:auto;box-shadow:0 6px 20px rgba(15,23,42,.06);position:relative;z-index:1;}
+.table{width:100%;border-collapse:separate;border-spacing:0;}
+.table thead th{position:sticky;top:0;background:#f9fafb;z-index:1;text-align:center;padding:.8rem;border-bottom:1px solid var(--border);}
+.table td{padding:.8rem;text-align:center;border-bottom:1px solid var(--border);vertical-align:middle;}
+.table tr:hover td{background:#fafafa;}
+.table .left{text-align:left;}
+.actions{white-space:nowrap;}
 
-.table-wrap{
-  background:var(--card); border:1px solid var(--border); border-radius:1rem; margin-top:1rem; overflow:auto;
-  box-shadow: 0 6px 20px rgba(15,23,42,.06);
-  position: relative; z-index: 1;
+/* Botones de acciones en tabla: compactos y consistentes */
+.table .actions .btn {
+  padding: .55rem .85rem;
+  font-size: .9rem;
+  border-radius: .5rem;
+  box-shadow: none;
+  margin-right: .34rem;
 }
-.table{ width:100%; border-collapse: separate; border-spacing:0; }
-.table thead th{
-  position: sticky; top: 0; background:#f9fafb; z-index:1;
-  text-align:center; padding:.8rem; border-bottom:1px solid var(--border);
+.table .actions .btn:last-child {
+  margin-right: 0;
 }
-.table td{
-  padding:.8rem; text-align:center; border-bottom:1px solid var(--border);
-  vertical-align: middle;
-}
-.table tr:hover td{ background:#fafafa; }
-.table .observaciones {
-  max-width: 260px;
-  white-space: normal;
-  word-wrap: break-word;
-  text-align: left;
-}
-.table .left{ text-align:left; }
 
-.actions{ white-space: nowrap; }
+/* Email en celda */
+.table td.email-cell{ text-align:center; white-space:normal; }
+.email-link{
+  display:block;
+  text-decoration:none;
+  color:inherit;
+  word-break:break-word;
+  line-height:1.2;
+}
 
-.center{ text-align:center; }
-.error{ color: var(--danger); }
+/* Paginación */
+.pagination{display:flex;align-items:center;gap:1rem;justify-content:flex-end;margin-top:1rem;}
 
+/* Botones generales */
 .btn{
-  padding:.35rem .65rem;   /* compacto */
-  font-size: .85rem;
-  border:none;
-  border-radius:.5rem;
-  cursor:pointer;
-  font-weight:600;
-  transition: transform .05s ease, box-shadow .2s ease, background .2s ease, opacity .2s ease;
-  box-shadow: 0 2px 0 rgba(0,0,0,.03);
+  padding:.95rem 1.35rem;
+  font-size:1.05rem;
+  border-radius:.8rem;
+  box-shadow:0 8px 20px rgba(79,70,229,.22);
 }
-.btn:disabled{ opacity:.6; cursor:not-allowed; }
-.btn:active{ transform: translateY(1px); }
+.btn:disabled{opacity:.6;cursor:not-allowed;}
+.btn:active{transform:translateY(1px);}
+.btn-primary{background:var(--primary);color:#fff;}
+.btn-primary:hover{background:var(--primary-600);}
+.btn-warning{background:#f59e0b;color:#fff;}
+.btn-danger{background:var(--danger);color:#fff;}
+.btn-success{background:var(--success);color:#fff;}
+.btn-secondary{background:#9ca3af;color:#fff;}
+.btn-light{background:#eef0f5;}
 
-.btn-primary{ background: var(--primary); color:#fff; }
-.btn-primary:hover{ background: var(--primary-600); }
-.btn-warning{ background:#f59e0b; color:#fff; margin-right:.3rem; }
-.btn-danger{ background: var(--danger); color:#fff; }
-.btn-success{ background: var(--success); color:#fff; }
-.btn-secondary{ background:#9ca3af; color:#fff; }
-.btn-light{ background:#eef0f5; }
-
-/* Outline para eliminar (rojo sin relleno) */
-.btn-outline-danger{
-  background: transparent;
-  color: var(--danger);
-  border: 1px solid var(--danger);
+/* Botones CTA (crear/registrar) */
+.btn-cta{
+  padding:.95rem 1.35rem;
+  font-size:1.05rem;
+  border-radius:.8rem;
+  box-shadow:0 8px 20px rgba(79,70,229,.22);
 }
-.btn-outline-danger:hover{
-  background: rgba(239,68,68,.08);
-}
-
-.badge{
-  display:inline-block; padding:.25rem .6rem; border-radius:999px; font-weight:600; font-size:.85rem;
-  background:#e5e7eb;
-  border: 1px solid rgba(0,0,0,.04);
-}
-.badge.success{ background: rgba(22,163,74,.12); color: var(--success); border-color: rgba(22,163,74,.25); }
-.badge.warn{ background: rgba(245,158,11,.14); color: var(--warn); border-color: rgba(245,158,11,.25); }
-.badge.danger{ background: rgba(239,68,68,.14); color: var(--danger); border-color: rgba(239,68,68,.25); }
-.badge.method{ background:#eef2ff; color:#4338ca; border-color: #c7d2fe; }
-
-.pagination{
-  display:flex; align-items:center; gap:1rem; justify-content:flex-end; margin-top:1rem;
-}
+.btn-cta:hover{transform:translateY(-1px);}
+.btn-cta:active{transform:translateY(0);}
 
 /* Modal */
-.modal-overlay {
-  position: fixed; inset: 0; background: rgba(2, 6, 23, 0.6);
-  display: flex; justify-content: center; align-items: center; z-index: 1000;
-  padding: 1rem;
-}
-.modal {
-  background: var(--card);
-  padding: 1.25rem 1.25rem 1rem;
-  border-radius: 16px; width: 520px; max-width: 95%;
-  border:1px solid var(--border);
-  box-shadow: 0 30px 80px rgba(2,6,23,.25);
-}
-.modal-lg { width: 720px; }
-.modal-title{ margin: 0 0 1rem; }
+.modal-overlay{position:fixed;inset:0;background:rgba(2,6,23,.6);display:flex;justify-content:center;align-items:center;z-index:1000;padding:1rem;}
+.modal{background:var(--card);padding:1.25rem 1.25rem 1rem;border-radius:16px;width:520px;max-width:95%;border:1px solid var(--border);box-shadow:0 30px 80px rgba(2,6,23,.25);}
+.modal-lg{width:720px;}
+.modal-title{margin:0 0 1rem;}
+.modal-actions{margin-top:1.2rem;display:flex;justify-content:flex-end;gap:.7rem;}
 
-.form-grid {
-  display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;
-}
-.form-grid label, 
-.modal label {
-  display:block; 
-  margin-bottom:.35rem; 
-  font-weight:600; 
-  color: var(--text);
-}
-
-.form-grid input, .form-grid select, textarea{
-  width: 100%; padding:.6rem .8rem; border:1px solid var(--border); border-radius:.6rem; background:#fff;
-  outline:none; color: var(--text);
-}
-.form-grid input:focus, .form-grid select:focus, textarea:focus{
-  border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(79,70,229,.15);
-}
-
-.modal-actions {
-  margin-top: 1.2rem;
-  display: flex; justify-content: flex-end; gap: .7rem;
-}
+/* Form */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
+.form-grid label,.modal label{display:block;margin-bottom:.35rem;font-weight:600;color:var(--text);}
+.form-grid input,.form-grid select,textarea{width:100%;padding:.6rem .8rem;border:1px solid var(--border);border-radius:.6rem;background:#fff;outline:none;color:var(--text);}
+.form-grid input:focus,.form-grid select:focus,textarea:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(79,70,229,.15);}
+.form-grid input::placeholder,textarea::placeholder{color:var(--muted);opacity:1;}
+.form-grid select option{color:var(--text);background:#fff;}
+.form-grid input:-webkit-autofill,.form-grid select:-webkit-autofill,textarea:-webkit-autofill{-webkit-text-fill-color:var(--text);box-shadow:0 0 0px 1000px #fff inset;transition:background-color 9999s ease-in-out 0s;}
 `;

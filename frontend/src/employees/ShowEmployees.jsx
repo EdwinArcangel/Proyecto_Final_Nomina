@@ -537,11 +537,10 @@ const styles = `
 .input{padding:.6rem .8rem;border:1px solid var(--border);border-radius:.6rem;background:#fff;color:var(--text);}
 .input-sm{padding:.45rem .65rem; font-size:.9rem;}   /* inputs más compactos */
 .btn-sm{padding:.35rem .6rem; font-size:.85rem;}
-/* placeholder más pequeño */
 .input::placeholder{font-size:.9rem; color:var(--muted);}
 select.input option{color:var(--text);background:#fff;}
 .sorter{display:flex;gap:.5rem;align-items:center;}
-.small-label{font-size:.9rem;} /* 'Ordenar por:' más pequeño */
+.small-label{font-size:.9rem;}
 
 /* Tabla */
 .table-wrap{background:var(--card);border:1px solid var(--border);border-radius:1rem;margin-top:1rem;overflow:auto;box-shadow:0 6px 20px rgba(15,23,42,.06);position:relative;z-index:1;}
@@ -552,35 +551,49 @@ select.input option{color:var(--text);background:#fff;}
 .table .left{text-align:left;}
 .actions{white-space:nowrap;}
 
-/* Email centrado y con corte limpio */
+/* Botones de acciones en tabla: compactos y consistentes */
+.table .actions .btn {
+  padding: .55rem .85rem;
+  font-size: .9rem;
+  border-radius: .5rem;
+  box-shadow: none;
+  margin-right: .34rem;
+}
+.table .actions .btn:last-child {
+  margin-right: 0;
+}
+
+/* Email en celda */
 .table td.email-cell{ text-align:center; white-space:normal; }
 .email-link{
-  display:block;                /* en su propia línea */
+  display:block;
   text-decoration:none;
   color:inherit;
-  word-break:break-word;        /* corta correos largos */
+  word-break:break-word;
   line-height:1.2;
 }
 
 /* Paginación */
 .pagination{display:flex;align-items:center;gap:1rem;justify-content:flex-end;margin-top:1rem;}
 
-/* Botones */
+/* Botones generales */
 .btn{
-  padding:.35rem .65rem;font-size:.85rem;border:none;border-radius:.5rem;cursor:pointer;font-weight:600;
-  transition:transform .05s ease,box-shadow .2s ease,background .2s ease,opacity .2s ease;
-  box-shadow:0 2px 0 rgba(0,0,0,.03);
+  padding:.95rem 1.35rem;
+  font-size:1.05rem;
+  border-radius:.8rem;
+  box-shadow:0 8px 20px rgba(79,70,229,.22);
 }
 .btn:disabled{opacity:.6;cursor:not-allowed;}
 .btn:active{transform:translateY(1px);}
 .btn-primary{background:var(--primary);color:#fff;}
 .btn-primary:hover{background:var(--primary-600);}
-.btn-warning{background:#f59e0b;color:#fff;margin-right:.3rem;}
+.btn-warning{background:#f59e0b;color:#fff;}
 .btn-danger{background:var(--danger);color:#fff;}
 .btn-success{background:var(--success);color:#fff;}
 .btn-secondary{background:#9ca3af;color:#fff;}
 .btn-light{background:#eef0f5;}
 
+/* Botones CTA (crear/registrar) */
 .btn-cta{
   padding:.95rem 1.35rem;
   font-size:1.05rem;

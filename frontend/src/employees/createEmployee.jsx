@@ -46,21 +46,20 @@ export default function CreateEmployee() {
     setFormData((f) => ({ ...f, fecha_ingreso: today }));
   }, [today]);
 
-  // Traer cargos para mostrar como <select> (ajusta la ruta si tu API es distinta)
+  // Traer cargos
   useEffect(() => {
     (async () => {
       try {
         const { data } = await api.get("/cargos");
         setCargos(Array.isArray(data) ? data : []);
       } catch {
-        // si falla, el formulario seguirá mostrando input de ID de cargo
+        // si falla, seguirá input numérico
       } finally {
         setLoadingCargos(false);
       }
     })();
   }, []);
 
-  // Normaliza campos numéricos (teléfono/documento solo dígitos) y limpia errores al escribir
   const handleChange = (e) => {
     const { name, value } = e.target;
     const sanitized = ["telefono","documento"].includes(name)
@@ -70,7 +69,6 @@ export default function CreateEmployee() {
     setErrors(prev => ({ ...prev, [name]: undefined }));
   };
 
-  // Validaciones básicas
   const validate = () => {
     const errs = {};
     if (!formData.nombre_empleado.trim()) errs.nombre_empleado = "Requerido";
@@ -80,18 +78,13 @@ export default function CreateEmployee() {
     if (!formData.cargo_id) errs.cargo_id = "Selecciona un cargo";
     if (!formData.salario_base || Number(formData.salario_base) <= 0)
       errs.salario_base = "Debe ser mayor a 0";
-
-    // Teléfono requerido y 10 dígitos
     if (!formData.telefono) {
       errs.telefono = "Requerido";
     } else if (!/^\d{10}$/.test(formData.telefono)) {
       errs.telefono = "Debe tener 10 dígitos";
     }
-
-    // fecha futura no permitida
     if (formData.fecha_ingreso && formData.fecha_ingreso > today)
       errs.fecha_ingreso = "No puede ser futura";
-
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
@@ -100,7 +93,6 @@ export default function CreateEmployee() {
     e.preventDefault();
     if (loading) return;
     if (!validate()) return;
-
     setLoading(true);
     try {
       const payload = {
@@ -108,13 +100,10 @@ export default function CreateEmployee() {
         cargo_id: Number(formData.cargo_id),
         salario_base: Number(formData.salario_base),
       };
-
       await api.post("/empleados", payload);
-
       toast.success("✅ Empleado registrado con éxito", {
         style: { fontSize: "18px", padding: "16px 20px", minWidth: "380px" },
       });
-
       setFormData({
         nombre_empleado: "",
         documento: "",
@@ -142,107 +131,64 @@ export default function CreateEmployee() {
 
   return (
     <>
-      {/* estilos mínimos (grid y spinner) */}
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
         @media (min-width: 780px) {
           .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
         }
         .req::after{content:" *"; color:#e11d48;}
+        input, select, textarea {
+          border: 2px solid #94a3b8; /* gris visible */
+        }
+        input:focus, select:focus, textarea:focus {
+          border-color: #2563eb !important;
+          box-shadow: 0 0 0 3px rgba(37,99,235,0.25);
+        }
       `}</style>
 
       <div style={styles.container}>
         <h2 style={{ marginTop: 0 }}>Registrar Empleado</h2>
-
         <form onSubmit={handleSubmit} style={{ ...styles.form, gap: "1rem" }} noValidate>
           <div className="grid-2">
-            <Field
-              label="Nombre completo"
-              name="nombre_empleado"
-              value={formData.nombre_empleado}
-              onChange={handleChange}
-              error={errors.nombre_empleado}
-              required
-              autoComplete="name"
-            />
-            <Field
-              label="Documento"
-              name="documento"
-              value={formData.documento}
-              onChange={handleChange}
-              error={errors.documento}
-              required
-              inputMode="numeric"
-              pattern="\\d*"
-              maxLength={20}
-              onKeyDown={digitsOnlyKeyDown}
+            <Field label="Nombre completo" name="nombre_empleado"
+              value={formData.nombre_empleado} onChange={handleChange}
+              error={errors.nombre_empleado} required autoComplete="name" />
+            <Field label="Documento" name="documento"
+              value={formData.documento} onChange={handleChange}
+              error={errors.documento} required inputMode="numeric"
+              maxLength={20} onKeyDown={digitsOnlyKeyDown}
               onPaste={digitsOnlyPaste(setFormData, "documento")}
-              placeholder="Solo números"
-            />
+              placeholder="Solo números" />
           </div>
 
           <div className="grid-2">
-            <Field
-              type="email"
-              label="Correo"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              error={errors.email}
-              required
-              autoComplete="email"
-            />
-            <Field
-              label="Teléfono"
-              name="telefono"
-              value={formData.telefono}
-              onChange={handleChange}
-              error={errors.telefono}
-              required
-              inputMode="numeric"
-              pattern="\\d*"
-              maxLength={10}
-              onKeyDown={digitsOnlyKeyDown}
+            <Field type="email" label="Correo" name="email"
+              value={formData.email} onChange={handleChange}
+              error={errors.email} required autoComplete="email" />
+            <Field label="Teléfono" name="telefono"
+              value={formData.telefono} onChange={handleChange}
+              error={errors.telefono} required inputMode="numeric"
+              maxLength={10} onKeyDown={digitsOnlyKeyDown}
               onPaste={digitsOnlyPaste(setFormData, "telefono")}
-              placeholder="3001234567"
-            />
+              placeholder="3001234567" />
           </div>
 
           <div className="grid-2">
-            <Field
-              label="Dirección"
-              name="direccion"
-              value={formData.direccion}
-              onChange={handleChange}
-              autoComplete="street-address"
-            />
-            <Field
-              type="date"
-              label="Fecha ingreso"
-              name="fecha_ingreso"
-              value={formData.fecha_ingreso}
-              onChange={handleChange}
-              error={errors.fecha_ingreso}
-              required
-              min="1970-01-01"
-              max={today}
-            />
+            <Field label="Dirección" name="direccion"
+              value={formData.direccion} onChange={handleChange}
+              autoComplete="street-address" />
+            <Field type="date" label="Fecha ingreso" name="fecha_ingreso"
+              value={formData.fecha_ingreso} onChange={handleChange}
+              error={errors.fecha_ingreso} required min="1970-01-01" max={today} />
           </div>
 
           <div className="grid-2">
-            {/* Select de cargo si hay datos; si no, input numérico */}
             {cargos.length > 0 ? (
               <div style={styles.field}>
                 <label htmlFor="cargo_id" className="req" style={styles.label}>Cargo</label>
-                <select
-                  id="cargo_id"
-                  name="cargo_id"
-                  value={formData.cargo_id}
-                  onChange={handleChange}
-                  disabled={loading || loadingCargos}
-                  style={styles.select}
-                  aria-invalid={!!errors.cargo_id}
-                >
+                <select id="cargo_id" name="cargo_id" value={formData.cargo_id}
+                  onChange={handleChange} disabled={loading || loadingCargos}
+                  style={styles.select} aria-invalid={!!errors.cargo_id}>
                   <option value="">Selecciona un cargo…</option>
                   {cargos.map((c) => (
                     <option key={c.id} value={c.id}>
@@ -253,31 +199,15 @@ export default function CreateEmployee() {
                 {errors.cargo_id && <div style={styles.error}>{errors.cargo_id}</div>}
               </div>
             ) : (
-              <Field
-                type="number"
-                label="ID Cargo"
-                name="cargo_id"
-                value={formData.cargo_id}
-                onChange={handleChange}
-                error={errors.cargo_id}
-                required
-                placeholder={loadingCargos ? "Cargando cargos…" : "Ej: 1"}
-              />
+              <Field type="number" label="ID Cargo" name="cargo_id"
+                value={formData.cargo_id} onChange={handleChange}
+                error={errors.cargo_id} required
+                placeholder={loadingCargos ? "Cargando cargos…" : "Ej: 1"} />
             )}
-
-            <Field
-              type="number"
-              label="Salario base (COP)"
-              name="salario_base"
-              value={formData.salario_base}
-              onChange={handleChange}
-              error={errors.salario_base}
-              required
-              min="0"
-              step="50000"
-              placeholder="Ej: 4500000"
-              help="Valor mensual en pesos colombianos"
-            />
+            <Field type="number" label="Salario base (COP)" name="salario_base"
+              value={formData.salario_base} onChange={handleChange}
+              error={errors.salario_base} required min="0" step="50000"
+              placeholder="Ej: 4500000" help="Valor mensual en COP" />
           </div>
 
           <div className="grid-2">
@@ -287,21 +217,16 @@ export default function CreateEmployee() {
 
           <div className="grid-2">
             <Field label="ARL" name="arl" value={formData.arl} onChange={handleChange} />
-            <div /> {/* hueco para mantener el grid */}
+            <div />
           </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            style={{ ...styles.button, ...(loading ? styles.buttonDisabled : {}) }}
-          >
+          <button type="submit" disabled={loading}
+            style={{ ...styles.button, ...(loading ? styles.buttonDisabled : {}) }}>
             {loading ? (
               <span style={styles.btnContent}>
                 <span style={styles.spinner} aria-hidden="true" /> Guardando…
               </span>
-            ) : (
-              "Guardar"
-            )}
+            ) : "Guardar"}
           </button>
         </form>
       </div>
@@ -309,54 +234,28 @@ export default function CreateEmployee() {
   );
 }
 
-/* ----- Subcomponente de campo con label + error/ayuda ----- */
-function Field({
-  label,
-  name,
-  value,
-  onChange,
-  error,
-  help,
-  required,
-  type = "text",
-  ...rest
-}) {
+function Field({ label, name, value, onChange, error, help, required, type = "text", ...rest }) {
   const id = `f_${name}`;
   return (
     <div style={styles.field}>
       <label htmlFor={id} className={required ? "req" : undefined} style={styles.label}>
         {label}
       </label>
-      <input
-        id={id}
-        name={name}
-        type={type}
-        value={value}
-        onChange={onChange}
-        required={required}
-        aria-invalid={!!error}
+      <input id={id} name={name} type={type} value={value} onChange={onChange}
+        required={required} aria-invalid={!!error}
         aria-describedby={error ? `${id}_err` : help ? `${id}_help` : undefined}
         style={{
           ...styles.input,
-          ...(error ? { borderColor: "#e11d48", boxShadow: "0 0 0 3px rgba(225,29,72,0.08)" } : {}),
+          ...(error ? { borderColor: "#e11d48", boxShadow: "0 0 0 3px rgba(200,29,72,0.08)" } : {}),
         }}
         {...rest}
       />
-      {help && !error && (
-        <div id={`${id}_help`} style={styles.help}>
-          {help}
-        </div>
-      )}
-      {error && (
-        <div id={`${id}_err`} style={styles.error}>
-          {error}
-        </div>
-      )}
+      {help && !error && <div id={`${id}_help`} style={styles.help}>{help}</div>}
+      {error && <div id={`${id}_err`} style={styles.error}>{error}</div>}
     </div>
   );
 }
 
-/* ---------------------- Estilos inline ---------------------- */
 const styles = {
   container: {
     maxWidth: "900px",
@@ -372,17 +271,20 @@ const styles = {
   input: {
     padding: "0.85rem",
     borderRadius: "10px",
-    border: "1px solid #cbd5e1",
+    border: "2px solid #94a3b8", // gris visible
     fontSize: "1rem",
     outline: "none",
+    background: "#fff",
+    color: "#0f172a",
     transition: "border-color .15s, box-shadow .15s",
   },
   select: {
     padding: "0.85rem",
     borderRadius: "10px",
-    border: "1px solid #cbd5e1",
+    border: "2px solid #94a3b8",
     fontSize: "1rem",
     outline: "none",
+    background: "#fff",
   },
   help: { fontSize: "0.85rem", color: "#64748b", marginTop: "6px" },
   error: { fontSize: "0.85rem", color: "#e11d48", marginTop: "6px" },
@@ -408,3 +310,4 @@ const styles = {
     animation: "spin 0.8s linear infinite",
   },
 };
+
