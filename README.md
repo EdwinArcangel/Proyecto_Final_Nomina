@@ -13,7 +13,12 @@ Incluye autenticación, panel de administración, gestión de empleados, usuario
 
 EL SIGUIENTE ES EL LINK DEL PROYECTO DESPLEGADO EN LA NUBE:
     https://e-nomina.vercel.app/
+
     
+-------------------- VIDEO EXPLICATIVO DE INSTALACIÓN EN LOCAL --------------------------
+
+  - Video 
+    https://vimeo.com/1118235862
 ---------------------------------------------------------------------------------------------------------------------------------
 🚀 Características principales 
 
@@ -122,10 +127,6 @@ Otros:
    - Abre  la url http://localhost:5173/ en tu navegador.
    - El frontend se comunicará con el backend
 
-------------------------------------- VIDEO EXPLICATIVO DE INSTALACIÓN Y FUNCIONAMIENTO DEL SOFTWARE--------------------------
-
-  - Video 
-     https://vimeo.com/1114750546
 --------------------------------------------------------------------------------------------------------------------------------   
 🧑‍💻 Herramientas recomendadas para versionamiento y desarrollo
 
