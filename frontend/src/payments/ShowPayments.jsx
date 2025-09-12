@@ -704,7 +704,7 @@ const onChangeEmpleado = (empleadoId) => {
               </div>
 
               <div>
-                <label htmlFor="horas_extras">Horas Extras</label>
+                <label htmlFor="horas_extras">Total Horas Extras</label>
                 <input
                   id="horas_extras"
                   type="number"
