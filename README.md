@@ -35,37 +35,32 @@ EL SIGUIENTE ES EL LINK DEL PROYECTO DESPLEGADO EN LA NUBE:
 - Generación de reportes exportables
 -------------------------------------------------------------------------------------------
 ## 📂 Estructura del proyecto
-
-Proyecto_Final_Nomina/
-│
-├── backend/                          # Lógica y API del servidor
-│   ├── server.js                     # Punto de entrada
-│   ├── config/
-│   │   └── db.js                     # Conexión a la base de datos + migraciones
-│   ├── routes/                       # Rutas del backend
-│   │   ├── auth.js                   # Autenticación
-│   │   ├── empleados.js              # Gestión de empleados
-│   │   ├── usuarios.js               # Gestión de usuarios
-│   │   ├── novedades.js              # Gestión de novedades
-│   │   ├── pagos.js                  # Gestión de pagos
-│   │   ├── cargos.js                 # Gestión de cargos
-│   │   └── dashboard.js              # Datos para panel
-│   └── package.json                  # Dependencias backend
-│
-├── frontend/                         # Aplicación cliente (React + Vite)
-│   ├── src/
-│   │   ├── home/                     # Dashboard
-│   │   ├── employees/                # Módulo empleados
-│   │   ├── users/                    # Módulo usuarios
-│   │   ├── novedades/                # Módulo novedades
-│   │   ├── payments/                 # Módulo pagos
-│   │   ├── reportes/                 # Exportación de reportes
-│   │   ├── utils/                    # Config API (axios, helpers)
-│   │   ├── App.jsx                   # Rutas protegidas
-│   │   └── index.html
-│   └── package.json                  # Dependencias frontend
-│
-└── README.md                         # Documentación del proyecto
+<p class="has-line-data" data-line-start="0" data-line-end="26">Proyecto_Final_Nomina/<br>
+├── backend/<br>
+│ ├── server.js<br>
+│ ├── config/<br>
+│ │ └── db.js<br>
+│ └── routes/<br>
+│ ├── auth.js<br>
+│ ├── empleados.js<br>
+│ ├── usuarios.js<br>
+│ ├── novedades.js<br>
+│ ├── pagos.js<br>
+│ └── cargos.js<br>
+├── frontend/<br>
+│ ├── package.json<br>
+│ └── src/<br>
+│ ├── home/<br>
+│ ├── employees/<br>
+│ ├── users/<br>
+│ ├── novedades/<br>
+│ ├── payments/<br>
+│ ├── reportes/<br>
+│ ├── utils/<br>
+│ ├── App.jsx<br>
+│ └── index.html<br>
+├── package.json<br>
+└── <a href="http://README.md">README.md</a></p>
 -------------------------------------------------------------------------------------------
 🛠 Tecnologías utilizadas
 
