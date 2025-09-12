@@ -1,4 +1,5 @@
 // config/db.js
+import 'dotenv/config';
 import mysql from "mysql2/promise";
 import bcrypt from "bcrypt";
 
@@ -8,56 +9,67 @@ let pool = null;
 const toBool = (v, def = false) =>
   String(v ?? def).trim().toLowerCase() === "true";
 
-/**
- * Conecta a MySQL usando pool.
- * - Crea la BD y aplica migraciones en local (opcional por flags).
- * - En producción/Render, normalmente ya apuntas a una BD existente.
- */
+const isLocalHost = (h) =>
+  ["localhost", "127.0.0.1"].includes(String(h || "").toLowerCase());
+
 export async function connectDB() {
   if (pool) return pool;
 
-  const host = process.env.MYSQL_HOST || "shuttle.proxy.rlwy.net";
-  const port = Number(process.env.MYSQL_PORT || 59903);
-  const user = process.env.MYSQL_USER || "root";
+  const host =
+    process.env.DB_HOST ||
+    process.env.MYSQL_HOST ||
+    "";
+  const port = Number(
+    process.env.DB_PORT ||
+      process.env.MYSQL_PORT ||
+      3306
+  );
+  const user =
+    process.env.DB_USER ||
+    process.env.MYSQL_USER ||
+    "";
   const password =
-    process.env.MYSQL_PASSWORD || "eyyajYBcbpiGiaFQeEtkGnRkuiafvSuC";
-  const database = process.env.MYSQL_DB || "railway";
-  const useSSL = toBool(process.env.MYSQL_SSL, false);
-
-  const createDbOnBoot = toBool(
-    process.env.CREATE_DB_ON_BOOT,
-    host === "shuttle.proxy.rlwy.net"
-  );
-  const migrateOnBoot = toBool(
-    process.env.MIGRATE_ON_BOOT,
-    host === "shuttle.proxy.rlwy.net"
-  );
-  const seedOnBoot = toBool(
-    process.env.SEED_ON_BOOT,
-    host === "shuttle.proxy.rlwy.net"
+    process.env.DB_PASSWORD ||
+    process.env.MYSQL_PASSWORD ||
+    "";
+  const database =
+    process.env.DB_NAME ||
+    process.env.MYSQL_DB ||
+    "";
+  const useSSL = toBool(
+    process.env.DB_SSL || process.env.MYSQL_SSL,
+    !isLocalHost(host)
   );
 
-  // 1) Crear BD si no existe
+  // En local: por defecto crear/migrar/sembrar. En nube: no.
+  const defaultBoot = isLocalHost(host);
+  const createDbOnBoot = toBool(process.env.CREATE_DB_ON_BOOT, defaultBoot);
+  const migrateOnBoot  = toBool(process.env.MIGRATE_ON_BOOT,  defaultBoot);
+  const seedOnBoot     = toBool(process.env.SEED_ON_BOOT,     defaultBoot);
+
+  console.log(
+    `🔌 Conectando a MySQL ${user}@${host}:${port} db=${database} ssl=${useSSL}`
+  );
+
+  // 1) Crear BD si no existe (si hay permisos)
   if (createDbOnBoot) {
     const admin = await mysql.createConnection({
-      host,
-      port,
-      user,
-      password,
+      host, port, user, password,
       ssl: useSSL ? { rejectUnauthorized: true } : undefined,
     });
-    await admin.query(`CREATE DATABASE IF NOT EXISTS \`${database}\``);
-    await admin.end();
-    console.log(`📦 Base de datos '${database}' lista`);
+    try {
+      await admin.query(`CREATE DATABASE IF NOT EXISTS \`${database}\``);
+      console.log(`📦 Base de datos '${database}' lista`);
+    } catch (e) {
+      console.warn(`⚠️ No se pudo crear la BD '${database}': ${e.code || e.message}`);
+    } finally {
+      await admin.end();
+    }
   }
 
-  // 2) Crear pool apuntando a la BD
+  // 2) Crear pool
   pool = mysql.createPool({
-    host,
-    port,
-    user,
-    password,
-    database,
+    host, port, user, password, database,
     waitForConnections: true,
     connectionLimit: 10,
     queueLimit: 0,
@@ -65,7 +77,7 @@ export async function connectDB() {
     ssl: useSSL ? { rejectUnauthorized: true } : undefined,
   });
 
-  // Verificación rápida
+  // Verificación
   const [ping] = await pool.query("SELECT 1 AS db_ok");
   console.log("✅ MySQL listo:", ping[0]);
 
@@ -75,7 +87,7 @@ export async function connectDB() {
     console.log("🗄️ Migraciones aplicadas (tablas creadas o ya existentes)");
   }
 
-  // 4) Seeds iniciales
+  // 4) Seeds
   if (seedOnBoot) {
     await runSeeds(pool);
   }
@@ -110,13 +122,13 @@ async function runMigrations(pool) {
       email VARCHAR(100) UNIQUE NOT NULL,
       password VARCHAR(255) NOT NULL,
       rol ENUM('admin','empleado') DEFAULT 'empleado'
-    )`,
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
 
     `CREATE TABLE IF NOT EXISTS departamentos (
       id INT AUTO_INCREMENT PRIMARY KEY,
       nombre VARCHAR(100) NOT NULL,
       descripcion VARCHAR(200)
-    )`,
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
 
     `CREATE TABLE IF NOT EXISTS cargos (
       id INT AUTO_INCREMENT PRIMARY KEY,
@@ -124,7 +136,7 @@ async function runMigrations(pool) {
       salario_base DECIMAL(12,2) NOT NULL,
       departamento_id INT NULL,
       FOREIGN KEY (departamento_id) REFERENCES departamentos(id) ON DELETE SET NULL
-    )`,
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
 
     `CREATE TABLE IF NOT EXISTS empleados (
       id INT AUTO_INCREMENT PRIMARY KEY,
@@ -144,19 +156,20 @@ async function runMigrations(pool) {
       creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       actualizado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
       FOREIGN KEY (cargo_id) REFERENCES cargos(id) ON DELETE CASCADE
-    )`,
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
 
     `CREATE TABLE IF NOT EXISTS periodos_nomina (
       id INT AUTO_INCREMENT PRIMARY KEY,
       fecha_inicio DATE NOT NULL,
       fecha_fin DATE NOT NULL,
       estado ENUM('abierto','cerrado') DEFAULT 'abierto'
-    )`,
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
 
+    /* Pagos con snapshot de nombre_empleado + FK a empleados */
     `CREATE TABLE IF NOT EXISTS pagos (
       id INT AUTO_INCREMENT PRIMARY KEY,
-      nombre_empleado VARCHAR(100),
       empleado_id INT NULL,
+      nombre_empleado VARCHAR(100) NULL,
       periodo_id INT NULL,
       fecha_pago DATE NOT NULL,
       monto DECIMAL(12,2) NOT NULL,
@@ -164,8 +177,10 @@ async function runMigrations(pool) {
       estado ENUM('pendiente','pagado','anulado') DEFAULT 'pendiente',
       observaciones TEXT NULL,
       FOREIGN KEY (empleado_id) REFERENCES empleados(id) ON DELETE CASCADE,
-      FOREIGN KEY (periodo_id) REFERENCES periodos_nomina(id) ON DELETE SET NULL
-    )`,
+      FOREIGN KEY (periodo_id) REFERENCES periodos_nomina(id) ON DELETE SET NULL,
+      INDEX idx_pagos_fecha (fecha_pago),
+      INDEX idx_pagos_estado (estado)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
 
     `CREATE TABLE IF NOT EXISTS novedades (
       id INT AUTO_INCREMENT PRIMARY KEY,
@@ -180,16 +195,14 @@ async function runMigrations(pool) {
       fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (empleado_id) REFERENCES empleados(id) ON DELETE CASCADE,
       FOREIGN KEY (aprobado_por) REFERENCES usuarios(id) ON DELETE SET NULL
-    )`,
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
 
-    // Parámetros para liquidación
     `CREATE TABLE IF NOT EXISTS parametros_nomina (
       id INT AUTO_INCREMENT PRIMARY KEY,
       nombre VARCHAR(100) NOT NULL,
       valor DECIMAL(10,2) NOT NULL
-    )`,
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
 
-    // Detalle de pagos (conceptos)
     `CREATE TABLE IF NOT EXISTS pago_detalle (
       id INT AUTO_INCREMENT PRIMARY KEY,
       pago_id INT NOT NULL,
@@ -197,12 +210,21 @@ async function runMigrations(pool) {
       valor DECIMAL(12,2) NOT NULL,
       tipo ENUM('devengado','deduccion','aporte') NOT NULL,
       FOREIGN KEY (pago_id) REFERENCES pagos(id) ON DELETE CASCADE
-
-    )`,
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
   ];
 
   for (const sql of statements) {
     await pool.query(sql);
+  }
+
+  // Compatibilidad: si la tabla pagos existe pero sin 'nombre_empleado', agrégala.
+  try {
+    await pool.query(
+      `ALTER TABLE pagos ADD COLUMN nombre_empleado VARCHAR(100) NULL`
+    );
+    console.log("🧱 Columna pagos.nombre_empleado agregada");
+  } catch (e) {
+    if (e?.errno !== 1060) throw e; // 1060 = duplicate column
   }
 }
 
@@ -221,7 +243,7 @@ async function runSeeds(pool) {
       "INSERT INTO usuarios (nombre_usuario, email, password, rol) VALUES (?, ?, ?, ?)",
       ["Administrador", "admin@nomina.com", hashed, "admin"]
     );
-    console.log("Usuario administrador creado");
+    console.log("👑 Usuario administrador creado");
   }
 
   // Departamentos
@@ -244,7 +266,7 @@ async function runSeeds(pool) {
         ('Mantenimiento', 'Infraestructura y soporte técnico'),
         ('Innovación', 'Investigación y desarrollo')`
     );
-    console.log("Departamentos de prueba insertados");
+    console.log("🏷️ Departamentos de prueba insertados");
   }
 
   // Cargos
@@ -259,7 +281,7 @@ async function runSeeds(pool) {
         ('Project Manager', 6000000, 1),
         ('Contador', 5000000, 3)`
     );
-    console.log("Cargos de prueba insertados");
+    console.log("💼 Cargos de prueba insertados");
   }
 
   // Empleados
@@ -275,7 +297,7 @@ async function runSeeds(pool) {
         ('Juan Pérez', 'CC124', 'juan@empresa.com', '3109876543', 'Carrera 45', '2023-02-20', 'activo', 2, 3800000, 'Sanitas', 'Porvenir', 'Positiva'),
         ('María Gómez', 'CC125', 'maria@empresa.com', '3204567890', 'Av. Siempre Viva', '2021-07-01', 'activo', 3, 6000000, 'Coomeva', 'Colpensiones', 'Bolívar')`
     );
-    console.log("Empleados de prueba insertados");
+    console.log("🧑‍💼 Empleados de prueba insertados");
   }
 
   // Periodo de nómina
@@ -287,7 +309,7 @@ async function runSeeds(pool) {
       "INSERT INTO periodos_nomina (fecha_inicio, fecha_fin, estado) VALUES (?, ?, ?)",
       ["2025-08-01", "2025-08-31", "abierto"]
     );
-    console.log("Periodo de nómina creado");
+    console.log("🗓️ Periodo de nómina creado");
   }
 
   // Parámetros de nómina
@@ -302,6 +324,6 @@ async function runSeeds(pool) {
         ('ARL_PORC', 0.5),
         ('AUX_TRANSPORTE', 140606)`
     );
-    console.log("Parámetros de nómina insertados");
+    console.log("⚙️ Parámetros de nómina insertados");
   }
 }
