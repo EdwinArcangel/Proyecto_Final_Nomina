@@ -104,10 +104,10 @@ Otros:
    
     Configurar el backend
     Crea el archivo .env con el siguiente contenido:
-   - DB_HOST=localhost
-   - DB_USER=root
-   - DB_PASSWORD=tu_password
-   - DB_NAME=db.nomina
+    DB_HOST=localhost
+    DB_USER=root
+    DB_PASSWORD=tu_password
+    DB_NAME=db.nomina
 
 3. Iniciar el servidor
    - Ejecutar el comando node server.js
@@ -117,7 +117,8 @@ Otros:
 
 4. Abrir el frontend
    - 1: cd frontend
-   - 2: npm run dev
+   - 2: npm install
+   - 3: npm run dev
    - Abre  la url http://localhost:5173/ en tu navegador.
    - El frontend se comunicará con el backend
 
