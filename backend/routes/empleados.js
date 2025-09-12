@@ -124,9 +124,9 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-/* =========================
-   Actualizar empleado (cargo en texto)
-   ========================= */
+// =========================
+//   Actualizar empleado (cargo en texto)
+// =========================
 router.put("/:id", async (req, res) => {
   try {
     const {
@@ -136,6 +136,7 @@ router.put("/:id", async (req, res) => {
       telefono,
       direccion,
       fecha_ingreso,
+      fecha_retiro,       // <-- FALTABA
       estado,
       cargo,
       salario_base,
@@ -151,7 +152,11 @@ router.put("/:id", async (req, res) => {
       });
     }
 
-    // 1. Buscar cargo
+    // Normaliza fechas vacías a NULL
+    const toNull = (v) =>
+      v === undefined || v === null || String(v).trim() === "" ? null : v;
+
+    // 1) Resolver/crear cargo
     let [cargoRow] = await connection.query(
       "SELECT id FROM cargos WHERE nombre = ?",
       [cargo]
@@ -167,18 +172,31 @@ router.put("/:id", async (req, res) => {
       cargo_id = insertCargo.insertId;
     }
 
-    // 2. Actualizar empleado
+    // 2) Actualizar empleado
     await connection.query(
       `UPDATE empleados
-       SET nombre_empleado=?, documento=?, email=?, telefono=?, direccion=?, fecha_ingreso=?, estado=?, cargo_id=?, salario_base=?, eps=?, pension=?, arl=?
-       WHERE id=?`,
+         SET nombre_empleado = ?,
+             documento       = ?,
+             email           = ?,
+             telefono        = ?,
+             direccion       = ?,
+             fecha_ingreso   = ?,
+             fecha_retiro    = ?,
+             estado          = ?,
+             cargo_id        = ?,
+             salario_base    = ?,
+             eps             = ?,
+             pension         = ?,
+             arl             = ?
+       WHERE id = ?`,
       [
         nombre_empleado,
         documento,
         email,
         telefono,
         direccion,
-        fecha_ingreso,
+        toNull(fecha_ingreso),
+        toNull(fecha_retiro),     // <-- ahora sí definido
         estado || "activo",
         cargo_id,
         salario_base,
@@ -189,9 +207,9 @@ router.put("/:id", async (req, res) => {
       ]
     );
 
-    res.json({ message: "✅ Empleado actualizado con éxito" });
+    res.json({ message: "Empleado actualizado con éxito" });
   } catch (err) {
-    console.error("❌ Error actualizando empleado:", err);
+    console.error("Error actualizando empleado:", err);
     res.status(500).json({ message: err.message || "Error al actualizar empleado" });
   }
 });
@@ -202,9 +220,9 @@ router.put("/:id", async (req, res) => {
 router.delete("/:id", async (req, res) => {
   try {
     await connection.query("DELETE FROM empleados WHERE id = ?", [req.params.id]);
-    res.json({ message: "🗑️ Empleado eliminado con éxito" });
+    res.json({ message: " Empleado eliminado con éxito" });
   } catch (err) {
-    console.error("❌ Error eliminando empleado:", err);
+    console.error(" Error eliminando empleado:", err);
     res.status(500).json({ message: err.message || "Error al eliminar empleado" });
   }
 });

@@ -155,7 +155,8 @@ async function runMigrations(pool) {
 
     `CREATE TABLE IF NOT EXISTS pagos (
       id INT AUTO_INCREMENT PRIMARY KEY,
-      empleado_id INT NOT NULL,
+      nombre_empleado VARCHAR(100),
+      empleado_id INT NULL,
       periodo_id INT NULL,
       fecha_pago DATE NOT NULL,
       monto DECIMAL(12,2) NOT NULL,
@@ -196,6 +197,7 @@ async function runMigrations(pool) {
       valor DECIMAL(12,2) NOT NULL,
       tipo ENUM('devengado','deduccion','aporte') NOT NULL,
       FOREIGN KEY (pago_id) REFERENCES pagos(id) ON DELETE CASCADE
+
     )`,
   ];
 
