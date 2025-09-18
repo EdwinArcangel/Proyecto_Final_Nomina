@@ -14,6 +14,11 @@ Incluye autenticación, panel de administración, gestión de empleados, usuario
 EL SIGUIENTE ES EL LINK DEL PROYECTO DESPLEGADO EN LA NUBE:
     https://e-nomina.vercel.app/
 
+------------------------------------------------------------------------------------
+Video Funcionamiento del Sistema
+
+https://vimeo.com/1118578429?share=copy
+
     
 -------------------- VIDEO EXPLICATIVO DE INSTALACIÓN EN LOCAL --------------------------
 
