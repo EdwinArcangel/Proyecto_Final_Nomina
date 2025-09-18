@@ -12,34 +12,41 @@ const toBool = (v, def = false) =>
 const isLocalHost = (h) =>
   ["localhost", "127.0.0.1"].includes(String(h || "").toLowerCase());
 
+/** Construye opciones SSL en base a variables de entorno */
+function buildSslOptions(useSSL) {
+  if (!useSSL) return undefined;
+
+  // Acepta tanto DB_CA como MYSQL_CA (contenido en BASE64 del ca.pem)
+  const caB64 = process.env.DB_CA || process.env.MYSQL_CA || "";
+  const insecure = toBool(process.env.DB_INSECURE_SSL || process.env.MYSQL_INSECURE_SSL, false);
+
+  if (caB64 && !insecure) {
+    return {
+      ca: Buffer.from(caB64, "base64").toString("utf-8"),
+      minVersion: "TLSv1.2",
+    };
+  }
+
+  // Modo emergencia (NO recomendado en producción): evita el error de certificado
+  if (insecure) {
+    return { rejectUnauthorized: false, minVersion: "TLSv1.2" };
+  }
+
+  // Si pides SSL pero no diste CA, mantén estricto y fallará de forma explícita
+  return { rejectUnauthorized: true, minVersion: "TLSv1.2" };
+}
+
 export async function connectDB() {
   if (pool) return pool;
 
-  const host =
-    process.env.DB_HOST ||
-    process.env.MYSQL_HOST ||
-    "";
-  const port = Number(
-    process.env.DB_PORT ||
-      process.env.MYSQL_PORT ||
-      3306
-  );
-  const user =
-    process.env.DB_USER ||
-    process.env.MYSQL_USER ||
-    "";
-  const password =
-    process.env.DB_PASSWORD ||
-    process.env.MYSQL_PASSWORD ||
-    "";
-  const database =
-    process.env.DB_NAME ||
-    process.env.MYSQL_DB ||
-    "";
-  const useSSL = toBool(
-    process.env.DB_SSL || process.env.MYSQL_SSL,
-    !isLocalHost(host)
-  );
+  const host = process.env.DB_HOST || process.env.MYSQL_HOST || "";
+  const port = Number(process.env.DB_PORT || process.env.MYSQL_PORT || 3306);
+  const user = process.env.DB_USER || process.env.MYSQL_USER || "";
+  const password = process.env.DB_PASSWORD || process.env.MYSQL_PASSWORD || "";
+  const database = process.env.DB_NAME || process.env.MYSQL_DB || "";
+  const useSSL = toBool(process.env.DB_SSL || process.env.MYSQL_SSL, !isLocalHost(host));
+
+  const ssl = buildSslOptions(useSSL);
 
   // En local: por defecto crear/migrar/sembrar. En nube: no.
   const defaultBoot = isLocalHost(host);
@@ -47,15 +54,13 @@ export async function connectDB() {
   const migrateOnBoot  = toBool(process.env.MIGRATE_ON_BOOT,  defaultBoot);
   const seedOnBoot     = toBool(process.env.SEED_ON_BOOT,     defaultBoot);
 
-  console.log(
-    `🔌 Conectando a MySQL ${user}@${host}:${port} db=${database} ssl=${useSSL}`
-  );
+  console.log(`🔌 Conectando a MySQL ${user}@${host}:${port} db=${database} ssl=${useSSL}`);
 
   // 1) Crear BD si no existe (si hay permisos)
   if (createDbOnBoot) {
     const admin = await mysql.createConnection({
       host, port, user, password,
-      ssl: useSSL ? { rejectUnauthorized: true } : undefined,
+      ssl, // <<<<<<<<<< usa el mismo SSL (con CA) también aquí
     });
     try {
       await admin.query(`CREATE DATABASE IF NOT EXISTS \`${database}\``);
@@ -74,7 +79,7 @@ export async function connectDB() {
     connectionLimit: 10,
     queueLimit: 0,
     multipleStatements: false,
-    ssl: useSSL ? { rejectUnauthorized: true } : undefined,
+    ssl, // <<<<<<<<<< usa SSL con CA en el pool
   });
 
   // Verificación
@@ -101,15 +106,12 @@ export function getPool() {
 }
 
 // Alias para compatibilidad
-export const connection = new Proxy(
-  {},
-  {
-    get(_t, prop) {
-      const p = getPool();
-      return p[prop].bind(p);
-    },
-  }
-);
+export const connection = new Proxy({}, {
+  get(_t, prop) {
+    const p = getPool();
+    return p[prop].bind(p);
+  },
+});
 
 /* =========================
    MIGRACIONES (CREATE TABLE)
@@ -123,13 +125,11 @@ async function runMigrations(pool) {
       password VARCHAR(255) NOT NULL,
       rol ENUM('admin','empleado') DEFAULT 'empleado'
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
-
     `CREATE TABLE IF NOT EXISTS departamentos (
       id INT AUTO_INCREMENT PRIMARY KEY,
       nombre VARCHAR(100) NOT NULL,
       descripcion VARCHAR(200)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
-
     `CREATE TABLE IF NOT EXISTS cargos (
       id INT AUTO_INCREMENT PRIMARY KEY,
       nombre VARCHAR(100) NOT NULL,
@@ -137,7 +137,6 @@ async function runMigrations(pool) {
       departamento_id INT NULL,
       FOREIGN KEY (departamento_id) REFERENCES departamentos(id) ON DELETE SET NULL
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
-
     `CREATE TABLE IF NOT EXISTS empleados (
       id INT AUTO_INCREMENT PRIMARY KEY,
       nombre_empleado VARCHAR(150) NOT NULL,
@@ -157,14 +156,12 @@ async function runMigrations(pool) {
       actualizado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
       FOREIGN KEY (cargo_id) REFERENCES cargos(id) ON DELETE CASCADE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
-
     `CREATE TABLE IF NOT EXISTS periodos_nomina (
       id INT AUTO_INCREMENT PRIMARY KEY,
       fecha_inicio DATE NOT NULL,
       fecha_fin DATE NOT NULL,
       estado ENUM('abierto','cerrado') DEFAULT 'abierto'
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
-
     /* Pagos con snapshot de nombre_empleado + FK a empleados */
     `CREATE TABLE IF NOT EXISTS pagos (
       id INT AUTO_INCREMENT PRIMARY KEY,
@@ -181,7 +178,6 @@ async function runMigrations(pool) {
       INDEX idx_pagos_fecha (fecha_pago),
       INDEX idx_pagos_estado (estado)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
-
     `CREATE TABLE IF NOT EXISTS novedades (
       id INT AUTO_INCREMENT PRIMARY KEY,
       empleado_id INT,
@@ -196,13 +192,11 @@ async function runMigrations(pool) {
       FOREIGN KEY (empleado_id) REFERENCES empleados(id) ON DELETE CASCADE,
       FOREIGN KEY (aprobado_por) REFERENCES usuarios(id) ON DELETE SET NULL
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
-
     `CREATE TABLE IF NOT EXISTS parametros_nomina (
       id INT AUTO_INCREMENT PRIMARY KEY,
       nombre VARCHAR(100) NOT NULL,
       valor DECIMAL(10,2) NOT NULL
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
-
     `CREATE TABLE IF NOT EXISTS pago_detalle (
       id INT AUTO_INCREMENT PRIMARY KEY,
       pago_id INT NOT NULL,
@@ -219,9 +213,7 @@ async function runMigrations(pool) {
 
   // Compatibilidad: si la tabla pagos existe pero sin 'nombre_empleado', agrégala.
   try {
-    await pool.query(
-      `ALTER TABLE pagos ADD COLUMN nombre_empleado VARCHAR(100) NULL`
-    );
+    await pool.query(`ALTER TABLE pagos ADD COLUMN nombre_empleado VARCHAR(100) NULL`);
     console.log("🧱 Columna pagos.nombre_empleado agregada");
   } catch (e) {
     if (e?.errno !== 1060) throw e; // 1060 = duplicate column
@@ -247,9 +239,7 @@ async function runSeeds(pool) {
   }
 
   // Departamentos
-  const [[{ total: depCount }]] = await pool.query(
-    "SELECT COUNT(*) AS total FROM departamentos"
-  );
+  const [[{ total: depCount }]] = await pool.query("SELECT COUNT(*) AS total FROM departamentos");
   if (depCount === 0) {
     await pool.query(
       `INSERT INTO departamentos (nombre, descripcion) VALUES
@@ -270,9 +260,7 @@ async function runSeeds(pool) {
   }
 
   // Cargos
-  const [[{ total: cargoCount }]] = await pool.query(
-    "SELECT COUNT(*) AS total FROM cargos"
-  );
+  const [[{ total: cargoCount }]] = await pool.query("SELECT COUNT(*) AS total FROM cargos");
   if (cargoCount === 0) {
     await pool.query(
       `INSERT INTO cargos (nombre, salario_base, departamento_id) VALUES 
@@ -285,9 +273,7 @@ async function runSeeds(pool) {
   }
 
   // Empleados
-  const [[{ total: empCount }]] = await pool.query(
-    "SELECT COUNT(*) AS total FROM empleados"
-  );
+  const [[{ total: empCount }]] = await pool.query("SELECT COUNT(*) AS total FROM empleados");
   if (empCount === 0) {
     await pool.query(
       `INSERT INTO empleados
@@ -301,9 +287,7 @@ async function runSeeds(pool) {
   }
 
   // Periodo de nómina
-  const [[{ total: perCount }]] = await pool.query(
-    "SELECT COUNT(*) AS total FROM periodos_nomina"
-  );
+  const [[{ total: perCount }]] = await pool.query("SELECT COUNT(*) AS total FROM periodos_nomina");
   if (perCount === 0) {
     await pool.query(
       "INSERT INTO periodos_nomina (fecha_inicio, fecha_fin, estado) VALUES (?, ?, ?)",
@@ -313,9 +297,7 @@ async function runSeeds(pool) {
   }
 
   // Parámetros de nómina
-  const [[{ total: paramCount }]] = await pool.query(
-    "SELECT COUNT(*) AS total FROM parametros_nomina"
-  );
+  const [[{ total: paramCount }]] = await pool.query("SELECT COUNT(*) AS total FROM parametros_nomina");
   if (paramCount === 0) {
     await pool.query(
       `INSERT INTO parametros_nomina (nombre, valor) VALUES
