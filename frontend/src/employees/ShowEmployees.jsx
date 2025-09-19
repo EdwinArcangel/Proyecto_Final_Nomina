@@ -1,6 +1,6 @@
 // src/employees/ShowEmployees.jsx
 import { useEffect, useMemo, useState, useCallback, useRef } from "react";
-import api from "../utils/api";
+import api, { API_PREFIX } from "../utils/api";   // ⬅️ importa API_PREFIX
 import { toast } from "react-toastify";
 
 const PAGE_SIZE = 10;
@@ -12,8 +12,8 @@ export default function ShowEmployees() {
 
   // Filtros / búsqueda / orden / paginación
   const [q, setQ] = useState("");
-  const [sortBy, setSortBy] = useState("fecha_ingreso"); // "fecha_ingreso" | "nombre_empleado" | "salario_base" | "cargo"
-  const [sortDir, setSortDir] = useState("desc"); // "asc" | "desc"
+  const [sortBy, setSortBy] = useState("fecha_ingreso");
+  const [sortDir, setSortDir] = useState("desc");
   const [page, setPage] = useState(1);
 
   // Modal
@@ -50,10 +50,10 @@ export default function ShowEmployees() {
     try {
       setLoading(true);
       setErrMsg("");
-      const res = await api.get("/empleados");
+      const res = await api.get(`${API_PREFIX}/empleados`);  // ⬅️ /api
       setEmployees(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
-      console.error(err);
+      console.error("Error cargando empleados:", err?.response?.data || err.message);
       setErrMsg("Error cargando empleados");
       toast.error("❌ Error cargando empleados");
     } finally {
@@ -91,38 +91,29 @@ export default function ShowEmployees() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!form.nombre_empleado.trim()) {
-      toast.warning("⚠️ El nombre es obligatorio");
-      return;
-    }
-    if (!form.documento.trim()) {
-      toast.warning("⚠️ El documento es obligatorio");
-      return;
-    }
-    if (!form.cargo.trim()) {
-      toast.warning("⚠️ El cargo es obligatorio");
-      return;
-    }
+    if (!form.nombre_empleado.trim()) return toast.warning("⚠️ El nombre es obligatorio");
+    if (!form.documento.trim()) return toast.warning("⚠️ El documento es obligatorio");
+    if (!form.cargo.trim()) return toast.warning("⚠️ El cargo es obligatorio");
+
     const salarioNumber = Number(form.salario_base);
     if (!salarioNumber || salarioNumber <= 0) {
-      toast.warning("⚠️ El salario base debe ser mayor a 0");
-      return;
+      return toast.warning("⚠️ El salario base debe ser mayor a 0");
     }
 
     const payload = { ...form, salario_base: salarioNumber };
 
     try {
       if (editingId) {
-        await api.put(`/empleados/${editingId}`, payload);
+        await api.put(`${API_PREFIX}/empleados/${editingId}`, payload);  // ⬅️ /api
         toast.success("✏️ Empleado actualizado");
       } else {
-        await api.post("/empleados", payload);
+        await api.post(`${API_PREFIX}/empleados`, payload);              // ⬅️ /api
         toast.success("✅ Empleado creado");
       }
       closeModal();
       fetchEmployees();
     } catch (err) {
-      console.error(err);
+      console.error("Error guardando empleado:", err?.response?.data || err.message);
       toast.error("❌ Error guardando empleado");
     }
   };
@@ -150,11 +141,11 @@ export default function ShowEmployees() {
   const handleDelete = async (id) => {
     if (!window.confirm("¿Seguro que deseas eliminar este empleado?")) return;
     try {
-      await api.delete(`/empleados/${id}`);
+      await api.delete(`${API_PREFIX}/empleados/${id}`);  // ⬅️ /api
       toast.success("🗑️ Empleado eliminado");
       fetchEmployees();
     } catch (err) {
-      console.error(err);
+      console.error("Error eliminando empleado:", err?.response?.data || err.message);
       toast.error("❌ Error eliminando empleado");
     }
   };
