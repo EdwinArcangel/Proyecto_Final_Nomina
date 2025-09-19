@@ -1,7 +1,8 @@
+// src/pages/Login.jsx
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import api, { AUTH_PATH } from "./utils/api";
+import api, { API_PREFIX, AUTH_PATH } from "./utils/api";
 import logo from "./assets/logo_nomina.jpg"; 
 import { FaUser, FaLock } from "react-icons/fa";
 
@@ -14,7 +15,7 @@ const Login = ({ onLoginSuccess }) => {
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      const response = await api.post(`${AUTH_PATH}/login`, {
+      const response = await api.post(`${API_PREFIX}${AUTH_PATH}/login`, {
         email: email.trim(),
         password: password.trim(),
       });
@@ -26,11 +27,12 @@ const Login = ({ onLoginSuccess }) => {
         navigate("/home");
       }
     } catch (error) {
-      setMessage(
-        error.response
-          ? "❌ " + error.response.data.message
-          : "⚠️ Error de conexión con el servidor"
-      );
+      const msg =
+        error?.response?.data?.message ||
+        error?.response?.data?.error ||
+        error?.message ||
+        "⚠️ Error de conexión con el servidor";
+      setMessage(`❌ ${msg}`);
     }
   };
 
