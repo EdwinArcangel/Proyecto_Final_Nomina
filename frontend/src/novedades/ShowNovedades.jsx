@@ -1,6 +1,6 @@
 // src/novedades/ShowNovedades.jsx
 import { useEffect, useMemo, useState, useCallback, useRef } from "react";
-import api from "../utils/api";
+import api, { API_PREFIX } from "../utils/api";
 import { toast } from "react-toastify";
 
 const PAGE_SIZE = 10;
@@ -31,8 +31,8 @@ export default function ShowNovedades() {
   const [q, setQ] = useState("");
   const [fTipo, setFTipo] = useState("");
   const [fEstado, setFEstado] = useState("");
-  const [sortBy, setSortBy] = useState("fecha_inicio"); // "fecha_inicio" | "fecha_fin" | "tipo" | "estado" | "nombre_empleado"
-  const [sortDir, setSortDir] = useState("desc"); // "asc" | "desc"
+  const [sortBy, setSortBy] = useState("fecha_inicio");
+  const [sortDir, setSortDir] = useState("desc");
   const [page, setPage] = useState(1);
 
   // Modal
@@ -54,11 +54,15 @@ export default function ShowNovedades() {
     try {
       setLoading(true);
       setErrMsg("");
-      const res = await api.get("/novedades");
+      const res = await api.get(`${API_PREFIX}/novedades`);
       setNovedades(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
-      console.error("Error cargando novedades:", err);
-      setErrMsg("Error cargando novedades");
+      console.error("Error cargando novedades:", err?.response?.data || err.message);
+      setErrMsg(
+        err?.response?.data?.message ||
+        err?.response?.data?.error ||
+        "Error cargando novedades"
+      );
       toast.error("❌ Error cargando novedades");
     } finally {
       setLoading(false);
@@ -67,10 +71,10 @@ export default function ShowNovedades() {
 
   const fetchEmpleados = useCallback(async () => {
     try {
-      const res = await api.get("/empleados");
+      const res = await api.get(`${API_PREFIX}/empleados`);
       setEmpleados(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
-      console.error("Error cargando empleados:", err);
+      console.error("Error cargando empleados:", err?.response?.data || err.message);
     }
   }, []);
 
@@ -113,19 +117,32 @@ export default function ShowNovedades() {
       return;
     }
 
+    // Intenta mapear nombre → id para enviar empleado_id si el backend lo espera
+    const emp = empleados.find((e) => e.nombre_empleado === form.nombre_empleado);
+    const payload = {
+      ...form,
+      ...(emp?.id ? { empleado_id: emp.id } : {}),
+    };
+
     try {
       if (editingId) {
-        await api.put(`/novedades/${editingId}`, form);
+        await api.put(`${API_PREFIX}/novedades/${editingId}`, payload);
         toast.success("✏️ Novedad actualizada");
       } else {
-        await api.post("/novedades", form);
+        await api.post(`${API_PREFIX}/novedades`, payload);
         toast.success("✅ Novedad creada");
       }
       closeModal();
       fetchNovedades();
     } catch (err) {
-      console.error("Error guardando novedad:", err);
-      toast.error("❌ Error guardando novedad");
+      console.error("Error guardando novedad:", err?.response?.data || err.message);
+      toast.error(
+        `❌ ${
+          err?.response?.data?.message ||
+          err?.response?.data?.error ||
+          "Error guardando novedad"
+        }`
+      );
     }
   };
 
@@ -147,12 +164,18 @@ export default function ShowNovedades() {
   const handleDelete = async (id) => {
     if (!window.confirm("¿Seguro que deseas eliminar esta novedad?")) return;
     try {
-      await api.delete(`/novedades/${id}`);
+      await api.delete(`${API_PREFIX}/novedades/${id}`);
       toast.success("🗑️ Novedad eliminada");
       fetchNovedades();
     } catch (err) {
-      console.error("Error eliminando novedad:", err);
-      toast.error("❌ Error eliminando novedad");
+      console.error("Error eliminando novedad:", err?.response?.data || err.message);
+      toast.error(
+        `❌ ${
+          err?.response?.data?.message ||
+          err?.response?.data?.error ||
+          "Error eliminando novedad"
+        }`
+      );
     }
   };
 
@@ -472,7 +495,6 @@ function EstadoBadge({ value }) {
 
 function TipoBadge({ value }) {
   const v = (value || "").toLowerCase();
-  // Asignamos colores por tipo (puedes ajustar a tu gusto)
   const map = {
     incapacidad: "badge info",
     licencia: "badge method",
@@ -486,6 +508,7 @@ function TipoBadge({ value }) {
   const label = TIPOS.find((t) => t.value === v)?.label || value;
   return <span className={cls}>{label}</span>;
 }
+
 
 /* === Estilos (alineados con las demás páginas) === */
 const styles = `
