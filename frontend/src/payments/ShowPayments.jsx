@@ -1,6 +1,6 @@
 // src/payments/ShowPayments.jsx
 import { useEffect, useMemo, useState, useCallback, useRef } from "react";
-import api from "../utils/api";
+import api, { API_PREFIX } from "../utils/api";
 import { toast } from "react-toastify";
 
 const PAGE_SIZE = 10;
@@ -16,11 +16,11 @@ export default function ShowPayments() {
   const [loading, setLoading] = useState(true);
   const [errMsg, setErrMsg] = useState("");
 
-  // UI: búsqueda / filtros / orden / paginación
+  // UI
   const [q, setQ] = useState("");
   const [fEstado, setFEstado] = useState("");
   const [sortBy, setSortBy] = useState("fecha_pago"); // "fecha_pago" | "monto"
-  const [sortDir, setSortDir] = useState("desc"); // "asc" | "desc"
+  const [sortDir, setSortDir] = useState("desc");
   const [page, setPage] = useState(1);
 
   // Modal / edición
@@ -29,23 +29,19 @@ export default function ShowPayments() {
   const [editingWasPagado, setEditingWasPagado] = useState(false);
   const modalRef = useRef(null);
 
-  // ====== NUEVO: campos del formulario ampliado ======
+  // ====== Form ======
   const [form, setForm] = useState({
-    // Info básica
     empleado_id: "",
     numero_identificacion: "",
     cargo: "",
-    periodo_pago: "mensual",          // "quincenal" | "mensual"
+    periodo_pago: "mensual",
     fecha_emision: new Date().toISOString().substring(0, 10),
 
-    // Relación con tu esquema actual (opcional si tu backend lo usa):
     periodo_id: "",
 
-    // Fechas y método
     fecha_pago: "",
     metodo_pago: "transferencia",
 
-    // Devengados (percepciones)
     salario_base: "",
     auxilio_transporte: "",
     horas_extras: "",
@@ -54,10 +50,15 @@ export default function ShowPayments() {
     otros_conceptos: "",
     otros_detalle: "",
 
-    // Estado/otros
     estado: "pendiente",
     observaciones: "",
   });
+
+  const empleadosById = useMemo(() => {
+    const m = new Map();
+    for (const e of empleados) m.set(Number(e.id), e);
+    return m;
+  }, [empleados]);
 
   const formatterCOP = useMemo(
     () =>
@@ -74,7 +75,6 @@ export default function ShowPayments() {
     return Number.isFinite(n) ? n : 0;
   };
 
-  // Total devengados (se usará como "monto" al guardar)
   const totalDevengados = useMemo(() => {
     return (
       num(form.salario_base) +
@@ -93,14 +93,19 @@ export default function ShowPayments() {
     form.otros_conceptos,
   ]);
 
+  // Fetch
   const fetchPagos = useCallback(async () => {
     try {
       setLoading(true);
       setErrMsg("");
-      const res = await api.get("/pagos");
+      const res = await api.get(`${API_PREFIX}/pagos`);
       setPagos(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
-      setErrMsg("Error cargando pagos");
+      setErrMsg(
+        err?.response?.data?.message ||
+          err?.response?.data?.error ||
+          "Error cargando pagos"
+      );
       toast.error("❌ Error cargando pagos");
       console.error(err);
     } finally {
@@ -110,7 +115,7 @@ export default function ShowPayments() {
 
   const fetchEmpleados = useCallback(async () => {
     try {
-      const res = await api.get("/empleados");
+      const res = await api.get(`${API_PREFIX}/empleados`);
       setEmpleados(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
       toast.error("❌ Error cargando empleados");
@@ -156,7 +161,7 @@ export default function ShowPayments() {
     resetForm();
   };
 
-  // Acciones CRUD
+  // Save/Update
   const handleSave = async () => {
     if (!form.empleado_id) {
       toast.warning("⚠️ Selecciona un empleado");
@@ -175,33 +180,30 @@ export default function ShowPayments() {
       return;
     }
 
-    // Si estaba pagado y se modifica, reabrimos a pendiente
     const nextEstado = !editingId
       ? "pendiente"
       : editingWasPagado
       ? "pendiente"
       : form.estado;
 
-    // Payload: mantenemos compat con tu API (monto = totalDevengados)
+    const emp = empleadosById.get(Number(form.empleado_id));
     const payload = {
       empleado_id: Number(form.empleado_id),
-      periodo_id: form.periodo_id ? Number(form.periodo_id) : null,
+      // snapshot útil para tu tabla pagos (tiene columna nombre_empleado)
+      nombre_empleado: emp?.nombre_empleado || null,
 
-      // Nuevos campos informativos
+      periodo_id: form.periodo_id ? Number(form.periodo_id) : null,
       numero_identificacion: form.numero_identificacion || null,
       cargo: form.cargo || null,
       periodo_pago: form.periodo_pago,
       fecha_emision: form.fecha_emision,
 
-      // Fechas, método y estado
       fecha_pago: form.fecha_pago,
       metodo_pago: form.metodo_pago,
       estado: nextEstado,
 
-      // Total a pagar
       monto: totalDevengados,
 
-      // Detalle de devengados (en plano por si tu API los acepta)
       salario_base: num(form.salario_base),
       auxilio_transporte: num(form.auxilio_transporte),
       horas_extras: num(form.horas_extras),
@@ -215,20 +217,26 @@ export default function ShowPayments() {
 
     try {
       if (editingId) {
-        await api.put(`/pagos/${editingId}`, payload);
+        await api.put(`${API_PREFIX}/pagos/${editingId}`, payload);
         toast.success(
           editingWasPagado
             ? "✏️ Pago actualizado y reabierto (pendiente)"
             : "✏️ Pago actualizado"
         );
       } else {
-        await api.post("/pagos", payload);
+        await api.post(`${API_PREFIX}/pagos`, payload);
         toast.success("💰 Pago registrado");
       }
       closeModal();
       fetchPagos();
     } catch (err) {
-      toast.error("❌ Error guardando pago");
+      toast.error(
+        `❌ ${
+          err?.response?.data?.message ||
+          err?.response?.data?.error ||
+          "Error guardando pago"
+        }`
+      );
       console.error(err);
     }
   };
@@ -236,7 +244,6 @@ export default function ShowPayments() {
   const handleEdit = (pago) => {
     setForm({
       empleado_id: pago.empleado_id ?? "",
-      // intentamos mapear si vienen en el API; si no, quedan vacíos editables
       numero_identificacion:
         pago.numero_identificacion ??
         pago.documento ??
@@ -246,7 +253,8 @@ export default function ShowPayments() {
         "",
       cargo: pago.cargo ?? pago.rol ?? "",
       periodo_pago: pago.periodo_pago ?? "mensual",
-      fecha_emision: pago.fecha_emision?.substring(0, 10) ??
+      fecha_emision:
+        pago.fecha_emision?.substring(0, 10) ??
         new Date().toISOString().substring(0, 10),
 
       periodo_id: pago.periodo_id ?? "",
@@ -254,7 +262,6 @@ export default function ShowPayments() {
       fecha_pago: pago.fecha_pago?.substring(0, 10) ?? "",
       metodo_pago: pago.metodo_pago ?? "transferencia",
 
-      // Si no tienes los desgloses guardados, prellenamos con monto como salario_base
       salario_base: pago.salario_base ?? pago.monto ?? "",
       auxilio_transporte: pago.auxilio_transporte ?? "",
       horas_extras: pago.horas_extras ?? "",
@@ -274,11 +281,17 @@ export default function ShowPayments() {
   const handleDelete = async (id) => {
     if (!window.confirm("¿Seguro de eliminar este pago?")) return;
     try {
-      await api.delete(`/pagos/${id}`);
+      await api.delete(`${API_PREFIX}/pagos/${id}`);
       toast.success("🗑️ Pago eliminado");
       fetchPagos();
     } catch (err) {
-      toast.error("❌ Error eliminando pago");
+      toast.error(
+        `❌ ${
+          err?.response?.data?.message ||
+          err?.response?.data?.error ||
+          "Error eliminando pago"
+        }`
+      );
       console.error(err);
     }
   };
@@ -292,7 +305,7 @@ export default function ShowPayments() {
     if (motivo === null) return;
 
     try {
-      await api.put(`/pagos/${pago.id}`, {
+      await api.put(`${API_PREFIX}/pagos/${pago.id}`, {
         empleado_id: pago.empleado_id,
         periodo_id: pago.periodo_id,
         fecha_pago:
@@ -309,12 +322,17 @@ export default function ShowPayments() {
       toast.success("🚫 Pago anulado");
       fetchPagos();
     } catch (err) {
-      toast.error("❌ No se pudo anular el pago");
+      toast.error(
+        `❌ ${
+          err?.response?.data?.message ||
+          err?.response?.data?.error ||
+          "No se pudo anular el pago"
+        }`
+      );
       console.error(err);
     }
   };
 
-  // Marcar como pagado
   const marcarPagado = async (pago) => {
     if (pago.estado === "pagado") {
       toast.info("Este pago ya está marcado como pagado.");
@@ -326,7 +344,7 @@ export default function ShowPayments() {
     }
 
     try {
-      await api.put(`/pagos/${pago.id}`, {
+      await api.put(`${API_PREFIX}/pagos/${pago.id}`, {
         empleado_id: pago.empleado_id,
         periodo_id: pago.periodo_id,
         fecha_pago:
@@ -340,35 +358,40 @@ export default function ShowPayments() {
       toast.success("✔ Pago Exitoso");
       fetchPagos();
     } catch (err) {
-      toast.error("❌ No se pudo marcar como pagado");
+      toast.error(
+        `❌ ${
+          err?.response?.data?.message ||
+          err?.response?.data?.error ||
+          "No se pudo marcar como pagado"
+        }`
+      );
       console.error(err);
     }
   };
 
-  // Autorrelleno al escoger empleado (intenta mapear doc/cargo si existen)
-const onChangeEmpleado = (empleadoId) => {
-  const found = empleados.find((e) => Number(e.id) === Number(empleadoId));
+  // Autorrelleno al escoger empleado
+  const onChangeEmpleado = (empleadoId) => {
+    const found = empleadosById.get(Number(empleadoId));
+    const doc =
+      found?.numero_identificacion ??
+      found?.documento ??
+      found?.cc ??
+      found?.nit ??
+      found?.numero_documento ??
+      "";
+    const rol = found?.cargo ?? found?.rol ?? "";
+    const salario = found?.salario_base ?? "";
 
-  const doc =
-    found?.numero_identificacion ??
-    found?.documento ??
-    found?.cc ??
-    found?.nit ??
-    found?.numero_documento ??
-    "";
-  const rol = found?.cargo ?? found?.rol ?? "";
-  const salario = found?.salario_base ?? "";
+    setForm((f) => ({
+      ...f,
+      empleado_id: empleadoId,
+      numero_identificacion: doc,
+      cargo: rol,
+      salario_base: salario,
+    }));
+  };
 
-  setForm((f) => ({
-    ...f,
-    empleado_id: empleadoId,
-    numero_identificacion: doc, 
-    cargo: rol,                  
-    salario_base: salario,      
-  }));
-};
-
-  // Filtro + búsqueda
+  // Filtro + búsqueda + orden
   const filtered = useMemo(() => {
     let data = [...pagos];
     if (q.trim()) {
@@ -376,14 +399,13 @@ const onChangeEmpleado = (empleadoId) => {
       data = data.filter(
         (p) =>
           String(p.id).includes(term) ||
-          (p.empleado_nombre || "").toLowerCase().includes(term) ||
+          (p.nombre_empleado || p.empleado_nombre || "").toLowerCase().includes(term) ||
           (p.observaciones || "").toLowerCase().includes(term)
       );
     }
     if (fEstado) {
       data = data.filter((p) => (p.estado || "").toLowerCase() === fEstado);
     }
-    // Orden
     data.sort((a, b) => {
       let A = a[sortBy];
       let B = b[sortBy];
@@ -408,9 +430,7 @@ const onChangeEmpleado = (empleadoId) => {
     return filtered.slice(start, start + PAGE_SIZE);
   }, [filtered, pageClamped]);
 
-  useEffect(() => {
-    setPage(1);
-  }, [q, fEstado]);
+  useEffect(() => setPage(1), [q, fEstado]);
 
   useEffect(() => {
     if (!modalOpen) return;
@@ -516,15 +536,11 @@ const onChangeEmpleado = (empleadoId) => {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan="9" className="center muted">
-                  Cargando pagos…
-                </td>
+                <td colSpan="9" className="center muted">Cargando pagos…</td>
               </tr>
             ) : errMsg ? (
               <tr>
-                <td colSpan="9" className="center error">
-                  {errMsg}
-                </td>
+                <td colSpan="9" className="center error">{errMsg}</td>
               </tr>
             ) : pageData.length === 0 ? (
               <tr>
@@ -536,27 +552,22 @@ const onChangeEmpleado = (empleadoId) => {
               pageData.map((pago) => (
                 <tr key={pago.id}>
                   <td>{pago.id}</td>
-                  <td className="left">{pago.empleado_nombre}</td>
+                  <td className="left">
+                    {pago.nombre_empleado ||
+                      pago.empleado_nombre ||
+                      empleadosById.get(Number(pago.empleado_id))?.nombre_empleado ||
+                      "—"}
+                  </td>
                   <td>{pago.periodo_id ?? "—"}</td>
                   <td>{pago.fecha_pago?.substring(0, 10)}</td>
                   <td>{formatterCOP.format(pago.monto)}</td>
-
-                  <td>
-                    <MetodoBadge value={pago.metodo_pago} />
-                  </td>
-                  <td>
-                    <EstadoBadge value={pago.estado} />
-                  </td>
-
+                  <td><MetodoBadge value={pago.metodo_pago} /></td>
+                  <td><EstadoBadge value={pago.estado} /></td>
                   <td className="observaciones">{pago.observaciones || "—"}</td>
                   <td className="actions">
-                    <button
-                      className="btn btn-warning"
-                      onClick={() => handleEdit(pago)}
-                    >
+                    <button className="btn btn-warning" onClick={() => handleEdit(pago)}>
                       ✏️ Modificar
                     </button>
-
                     <button
                       className="btn btn-success"
                       onClick={() => marcarPagado(pago)}
@@ -565,7 +576,6 @@ const onChangeEmpleado = (empleadoId) => {
                     >
                       ✔ Pagar
                     </button>
-
                     <button
                       className="btn btn-danger"
                       onClick={() => anularPago(pago)}
@@ -574,7 +584,6 @@ const onChangeEmpleado = (empleadoId) => {
                     >
                       🚫 Anular
                     </button>
-
                     <button
                       className="btn btn-outline-danger"
                       onClick={() => handleDelete(pago.id)}
@@ -589,7 +598,6 @@ const onChangeEmpleado = (empleadoId) => {
         </table>
       </div>
 
-     
       {/* Modal */}
       {modalOpen && (
         <div className="modal-overlay" ref={modalRef} role="dialog" aria-modal="true">
@@ -598,7 +606,7 @@ const onChangeEmpleado = (empleadoId) => {
               {editingId ? "✏️ Editar Pago" : "💰 Registrar Pago"}
             </h3>
 
-            {/* ====== Información del Empleado y Periodo ====== */}
+            {/* Info empleado/periodo */}
             <h4 className="section-title">Información del Empleado y Periodo</h4>
             <div className="form-grid">
               <div>
@@ -622,9 +630,7 @@ const onChangeEmpleado = (empleadoId) => {
                 <input
                   id="numero_identificacion"
                   value={form.numero_identificacion}
-                  onChange={(e) =>
-                    setForm({ ...form, numero_identificacion: e.target.value })
-                  }
+                  onChange={(e) => setForm({ ...form, numero_identificacion: e.target.value })}
                 />
               </div>
 
@@ -660,7 +666,6 @@ const onChangeEmpleado = (empleadoId) => {
                 />
               </div>
 
-              {/* Si tu backend usa un ID de periodo */}
               <div>
                 <label htmlFor="periodo_id">ID de Periodo (opcional)</label>
                 <input
@@ -668,14 +673,12 @@ const onChangeEmpleado = (empleadoId) => {
                   inputMode="numeric"
                   type="number"
                   value={form.periodo_id ?? ""}
-                  onChange={(e) =>
-                    setForm({ ...form, periodo_id: e.target.value })
-                  }
+                  onChange={(e) => setForm({ ...form, periodo_id: e.target.value })}
                 />
               </div>
             </div>
 
-            {/* ====== Detalles de Percepciones (Devengados) ====== */}
+            {/* Devengados */}
             <div className="form-grid">
               <div>
                 <label htmlFor="salario_base">Salario Base</label>
@@ -697,9 +700,7 @@ const onChangeEmpleado = (empleadoId) => {
                   min="0"
                   step="1"
                   value={form.auxilio_transporte}
-                  onChange={(e) =>
-                    setForm({ ...form, auxilio_transporte: e.target.value })
-                  }
+                  onChange={(e) => setForm({ ...form, auxilio_transporte: e.target.value })}
                 />
               </div>
 
@@ -711,9 +712,7 @@ const onChangeEmpleado = (empleadoId) => {
                   min="0"
                   step="1"
                   value={form.horas_extras}
-                  onChange={(e) =>
-                    setForm({ ...form, horas_extras: e.target.value })
-                  }
+                  onChange={(e) => setForm({ ...form, horas_extras: e.target.value })}
                 />
               </div>
 
@@ -725,9 +724,7 @@ const onChangeEmpleado = (empleadoId) => {
                   min="0"
                   step="1"
                   value={form.comisiones}
-                  onChange={(e) =>
-                    setForm({ ...form, comisiones: e.target.value })
-                  }
+                  onChange={(e) => setForm({ ...form, comisiones: e.target.value })}
                 />
               </div>
 
@@ -740,10 +737,7 @@ const onChangeEmpleado = (empleadoId) => {
                   step="1"
                   value={form.bonificaciones_no_salariales}
                   onChange={(e) =>
-                    setForm({
-                      ...form,
-                      bonificaciones_no_salariales: e.target.value,
-                    })
+                    setForm({ ...form, bonificaciones_no_salariales: e.target.value })
                   }
                 />
               </div>
@@ -756,9 +750,7 @@ const onChangeEmpleado = (empleadoId) => {
                   min="0"
                   step="1"
                   value={form.otros_conceptos}
-                  onChange={(e) =>
-                    setForm({ ...form, otros_conceptos: e.target.value })
-                  }
+                  onChange={(e) => setForm({ ...form, otros_conceptos: e.target.value })}
                 />
               </div>
 
@@ -772,10 +764,10 @@ const onChangeEmpleado = (empleadoId) => {
               </div>
             </div>
 
-            {/* ====== Totales / Pago ====== */}
+            {/* Totales / Pago */}
             <div className="totales-card">
               <div className="tot-line">
-      
+                <span>Total a pagar:</span>{" "}
                 <strong>{formatterCOP.format(totalDevengados)}</strong>
               </div>
               <div className="tot-grid">
@@ -786,9 +778,7 @@ const onChangeEmpleado = (empleadoId) => {
                     type="date"
                     value={form.fecha_pago}
                     max={new Date().toISOString().substring(0, 10)}
-                    onChange={(e) =>
-                      setForm({ ...form, fecha_pago: e.target.value })
-                    }
+                    onChange={(e) => setForm({ ...form, fecha_pago: e.target.value })}
                   />
                 </div>
                 <div>
@@ -796,9 +786,7 @@ const onChangeEmpleado = (empleadoId) => {
                   <select
                     id="metodo_pago"
                     value={form.metodo_pago}
-                    onChange={(e) =>
-                      setForm({ ...form, metodo_pago: e.target.value })
-                    }
+                    onChange={(e) => setForm({ ...form, metodo_pago: e.target.value })}
                   >
                     <option value="transferencia">Transferencia</option>
                     <option value="efectivo">Efectivo</option>
@@ -814,9 +802,7 @@ const onChangeEmpleado = (empleadoId) => {
                 id="observaciones"
                 rows="3"
                 value={form.observaciones}
-                onChange={(e) =>
-                  setForm({ ...form, observaciones: e.target.value })
-                }
+                onChange={(e) => setForm({ ...form, observaciones: e.target.value })}
                 style={{ width: "100%", padding: "0.8rem", borderRadius: "6px" }}
               />
             </div>
@@ -833,7 +819,6 @@ const onChangeEmpleado = (empleadoId) => {
         </div>
       )}
 
-      {/* estilos */}
       <style>{styles}</style>
     </div>
   );
@@ -841,33 +826,21 @@ const onChangeEmpleado = (empleadoId) => {
 
 function EstadoBadge({ value }) {
   const val = (value || "").toLowerCase();
-  const map = {
-    pagado: "badge success",
-    pendiente: "badge warn",
-    anulado: "badge danger",
-  };
+  const map = { pagado: "badge success", pendiente: "badge warn", anulado: "badge danger" };
   const cls = map[val] || "badge";
   const label =
-    val === "pagado"
-      ? "Pagado"
-      : val === "pendiente"
-      ? "Pendiente"
-      : val === "anulado"
-      ? "Anulado"
-      : value;
+    val === "pagado" ? "Pagado" :
+    val === "pendiente" ? "Pendiente" :
+    val === "anulado" ? "Anulado" : value;
   return <span className={cls}>{label}</span>;
 }
 
 function MetodoBadge({ value }) {
   const val = (value || "").toLowerCase();
   const label =
-    val === "transferencia"
-      ? "transferencia"
-      : val === "efectivo"
-      ? "efectivo"
-      : val === "cheque"
-      ? "cheque"
-      : value || "—";
+    val === "transferencia" ? "transferencia" :
+    val === "efectivo" ? "efectivo" :
+    val === "cheque" ? "cheque" : value || "—";
   return <span className="badge method">{label}</span>;
 }
 
@@ -885,30 +858,15 @@ const styles = `
   --danger:#ef4444;
   --success:#16a34a;
 }
-
 *{box-sizing:border-box}
-.container {
-  padding: 1.5rem 2rem;
-  background: var(--bg);
-  min-height: 100vh;
-  color: var(--text);
-}
+.container { padding: 1.5rem 2rem; background: var(--bg); min-height: 100vh; color: var(--text); }
 .header{display:flex;align-items:center;justify-content:space-between;gap:1rem;}
 .title{margin:0;}
 .subtitle{margin:.25rem 0 0;color:var(--muted);}
 .muted{color:var(--muted);}
-
-/* Toolbar */
 .toolbar{display:flex;gap:.75rem;flex-wrap:wrap;margin-top:1rem;position:relative;z-index:10;}
 .input{padding:.6rem .8rem;border:1px solid var(--border);border-radius:.6rem;background:#fff;color:var(--text);}
-.input-sm{padding:.45rem .65rem; font-size:.9rem;}   /* inputs más compactos */
-.btn-sm{padding:.35rem .6rem; font-size:.85rem;}
-.input::placeholder{font-size:.9rem; color:var(--muted);}
-select.input option{color:var(--text);background:#fff;}
 .sorter{display:flex;gap:.5rem;align-items:center;}
-.small-label{font-size:.9rem;}
-
-/* Tabla */
 .table-wrap{background:var(--card);border:1px solid var(--border);border-radius:1rem;margin-top:1rem;overflow:auto;box-shadow:0 6px 20px rgba(15,23,42,.06);position:relative;z-index:1;}
 .table{width:100%;border-collapse:separate;border-spacing:0;}
 .table thead th{position:sticky;top:0;background:#f9fafb;z-index:1;text-align:center;padding:.8rem;border-bottom:1px solid var(--border);}
@@ -916,39 +874,10 @@ select.input option{color:var(--text);background:#fff;}
 .table tr:hover td{background:#fafafa;}
 .table .left{text-align:left;}
 .actions{white-space:nowrap;}
-
-/* Botones de acciones en tabla: compactos y consistentes */
-.table .actions .btn {
-  padding: .55rem .85rem;
-  font-size: .9rem;
-  border-radius: .5rem;
-  box-shadow: none;
-  margin-right: .34rem;
-}
-.table .actions .btn:last-child {
-  margin-right: 0;
-}
-
-/* Email en celda */
-.table td.email-cell{ text-align:center; white-space:normal; }
-.email-link{
-  display:block;
-  text-decoration:none;
-  color:inherit;
-  word-break:break-word;
-  line-height:1.2;
-}
-
-/* Paginación */
+.table .actions .btn { padding: .55rem .85rem; font-size: .9rem; border-radius: .5rem; box-shadow: none; margin-right: .34rem; }
+.table .actions .btn:last-child { margin-right: 0; }
 .pagination{display:flex;align-items:center;gap:1rem;justify-content:flex-end;margin-top:1rem;}
-
-/* Botones generales */
-.btn{
-  padding:.95rem 1.35rem;
-  font-size:1.05rem;
-  border-radius:.8rem;
-  box-shadow:0 8px 20px rgba(79,70,229,.22);
-}
+.btn{ padding:.95rem 1.35rem; font-size:1.05rem; border-radius:.8rem; box-shadow:0 8px 20px rgba(79,70,229,.22); }
 .btn:disabled{opacity:.6;cursor:not-allowed;}
 .btn:active{transform:translateY(1px);}
 .btn-primary{background:var(--primary);color:#fff;}
@@ -958,30 +887,16 @@ select.input option{color:var(--text);background:#fff;}
 .btn-success{background:var(--success);color:#fff;}
 .btn-secondary{background:#9ca3af;color:#fff;}
 .btn-light{background:#eef0f5;}
-
-/* Botones CTA (crear/registrar) */
-.btn-cta{
-  padding:.95rem 1.35rem;
-  font-size:1.05rem;
-  border-radius:.8rem;
-  box-shadow:0 8px 20px rgba(79,70,229,.22);
-}
-.btn-cta:hover{transform:translateY(-1px);}
-.btn-cta:active{transform:translateY(0);}
-
-/* Modal */
 .modal-overlay{position:fixed;inset:0;background:rgba(2,6,23,.6);display:flex;justify-content:center;align-items:center;z-index:1000;padding:1rem;}
 .modal{background:var(--card);padding:1.25rem 1.25rem 1rem;border-radius:16px;width:520px;max-width:95%;border:1px solid var(--border);box-shadow:0 30px 80px rgba(2,6,23,.25);}
 .modal-lg{width:720px;}
 .modal-title{margin:0 0 1rem;}
-.modal-actions{margin-top:1.2rem;display:flex;justify-content:flex-end;gap:.7rem;}
-
-/* Form */
+.section-title{margin: .6rem 0 .4rem; color:#0f172a;}
+.totales-card{margin-top:.5rem;padding:1rem;border:1px solid var(--border);border-radius:.8rem;background:#fff;}
+.tot-line{font-size:1.05rem;margin-bottom:.6rem;}
+.tot-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
 .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
-.form-grid label,.modal label{display:block;margin-bottom:.35rem;font-weight:600;color:var(--text);}
+.form-grid label{display:block;margin-bottom:.35rem;font-weight:600;color:var(--text);}
 .form-grid input,.form-grid select,textarea{width:100%;padding:.6rem .8rem;border:1px solid var(--border);border-radius:.6rem;background:#fff;outline:none;color:var(--text);}
 .form-grid input:focus,.form-grid select:focus,textarea:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(79,70,229,.15);}
-.form-grid input::placeholder,textarea::placeholder{color:var(--muted);opacity:1;}
-.form-grid select option{color:var(--text);background:#fff;}
-.form-grid input:-webkit-autofill,.form-grid select:-webkit-autofill,textarea:-webkit-autofill{-webkit-text-fill-color:var(--text);box-shadow:0 0 0px 1000px #fff inset;transition:background-color 9999s ease-in-out 0s;}
 `;
