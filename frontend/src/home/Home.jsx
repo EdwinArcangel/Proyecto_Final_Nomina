@@ -1,7 +1,7 @@
 // src/home/Home.jsx
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import api from "../utils/api";
+import api, { API_PREFIX } from "../utils/api";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend
@@ -26,10 +26,10 @@ export default function Home({ user }) {
   const fetchDashboard = async () => {
     try {
       setLoading(true);
-      const res = await api.get("/dashboard");
+      const res = await api.get(`${API_PREFIX}/dashboard`); // ⬅️ /api
       setStats(res.data);
     } catch (err) {
-      console.error("Error cargando dashboard:", err);
+      console.error("Error cargando dashboard:", err?.response?.data || err.message);
     } finally {
       setLoading(false);
     }
@@ -37,19 +37,19 @@ export default function Home({ user }) {
 
   const fetchPagosMensuales = async () => {
     try {
-      const res = await api.get("/dashboard/pagos-mensuales");
+      const res = await api.get(`${API_PREFIX}/dashboard/pagos-mensuales`); // ⬅️ /api
       setPagosMensuales(res.data);
     } catch (err) {
-      console.error("Error cargando pagos mensuales:", err);
+      console.error("Error cargando pagos mensuales:", err?.response?.data || err.message);
     }
   };
 
   const fetchEmpleadosPorCargo = async () => {
     try {
-      const res = await api.get("/dashboard/empleados-por-cargo");
+      const res = await api.get(`${API_PREFIX}/dashboard/empleados-por-cargo`); // ⬅️ /api
       setEmpleadosPorCargo(res.data);
     } catch (err) {
-      console.error("Error cargando empleados por cargo:", err);
+      console.error("Error cargando empleados por cargo:", err?.response?.data || err.message);
     }
   };
 
