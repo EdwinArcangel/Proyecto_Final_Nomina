@@ -1,6 +1,6 @@
 // src/users/ShowUsers.jsx
 import { useEffect, useMemo, useState, useCallback, useRef } from "react";
-import api from "../utils/api";
+import api, { API_PREFIX } from "../utils/api"; // ⬅️ usa API_PREFIX
 import { toast } from "react-toastify";
 
 const PAGE_SIZE = 10;
@@ -12,8 +12,8 @@ export default function ShowUsers() {
 
   // UI
   const [q, setQ] = useState("");
-  const [sortBy, setSortBy] = useState("nombre_usuario"); // "nombre_usuario" | "email" | "rol" | "id"
-  const [sortDir, setSortDir] = useState("asc"); // "asc" | "desc"
+  const [sortBy, setSortBy] = useState("nombre_usuario");
+  const [sortDir, setSortDir] = useState("asc");
   const [page, setPage] = useState(1);
 
   // Modal
@@ -33,11 +33,15 @@ export default function ShowUsers() {
     try {
       setLoading(true);
       setErrMsg("");
-      const res = await api.get("/usuarios");
+      const res = await api.get(`${API_PREFIX}/usuarios`); // ⬅️ /api
       setUsers(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
-      console.error("Error cargando usuarios:", err);
-      setErrMsg("Error cargando usuarios");
+      console.error("Error cargando usuarios:", err?.response?.data || err.message);
+      setErrMsg(
+        err?.response?.data?.message ||
+        err?.response?.data?.error ||
+        "Error cargando usuarios"
+      );
       toast.error("❌ Error cargando usuarios");
     } finally {
       setLoading(false);
@@ -75,15 +79,11 @@ export default function ShowUsers() {
       toast.warning("⚠️ El email es obligatorio");
       return;
     }
-    // Reglas de contraseña:
-    // - Crear: requerida
-    // - Editar: opcional; si está vacía no se envía
     if (!editingId && !form.password.trim()) {
       toast.warning("⚠️ La contraseña es obligatoria para crear");
       return;
     }
 
-    // Construimos payload; omitimos password si está vacía y es edición
     const payload = {
       nombre_usuario: form.nombre_usuario.trim(),
       email: form.email.trim(),
@@ -93,17 +93,23 @@ export default function ShowUsers() {
 
     try {
       if (editingId) {
-        await api.put(`/usuarios/${editingId}`, payload);
+        await api.put(`${API_PREFIX}/usuarios/${editingId}`, payload); // ⬅️ /api
         toast.success("✏️ Usuario actualizado con éxito");
       } else {
-        await api.post("/usuarios", payload);
+        await api.post(`${API_PREFIX}/usuarios`, payload); // ⬅️ /api
         toast.success("✅ Usuario creado con éxito");
       }
       closeModal();
       fetchUsers();
     } catch (err) {
-      console.error("❌ Error guardando usuario:", err);
-      toast.error("❌ Error guardando usuario");
+      console.error("❌ Error guardando usuario:", err?.response?.data || err.message);
+      toast.error(
+        `❌ ${
+          err?.response?.data?.message ||
+          err?.response?.data?.error ||
+          "Error guardando usuario"
+        }`
+      );
     }
   };
 
@@ -112,7 +118,7 @@ export default function ShowUsers() {
     setForm({
       nombre_usuario: u.nombre_usuario ?? "",
       email: u.email ?? "",
-      password: "", // no mostramos hash
+      password: "",
       rol: u.rol ?? "empleado",
     });
     setEditingId(u.id);
@@ -123,12 +129,18 @@ export default function ShowUsers() {
   const handleDelete = async (id) => {
     if (!window.confirm("¿Seguro que deseas eliminar este usuario?")) return;
     try {
-      await api.delete(`/usuarios/${id}`);
+      await api.delete(`${API_PREFIX}/usuarios/${id}`); // ⬅️ /api
       toast.success("🗑️ Usuario eliminado con éxito");
       fetchUsers();
     } catch (err) {
-      console.error("❌ Error eliminando usuario:", err);
-      toast.error("❌ Error eliminando usuario");
+      console.error("❌ Error eliminando usuario:", err?.response?.data || err.message);
+      toast.error(
+        `❌ ${
+          err?.response?.data?.message ||
+          err?.response?.data?.error ||
+          "Error eliminando usuario"
+        }`
+      );
     }
   };
 
@@ -192,7 +204,7 @@ export default function ShowUsers() {
         <div>
           <h2 className="title">🧑‍💻 Gestión de Usuarios</h2>
           <p className="subtitle">
-            Crea, edita y administra usuarios.{" "}
+            Crea, edita y administra usuarios{" "}
             <span className="muted">({users.length} total{users.length === 1 ? "" : "es"})</span>
           </p>
         </div>
@@ -369,7 +381,6 @@ export default function ShowUsers() {
     </div>
   );
 }
-
 /* === Estilos (alineados con Pagos/Empleados) === */
 const styles = `
 :root{
