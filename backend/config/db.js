@@ -5,7 +5,7 @@ import bcrypt from "bcrypt";
 
 let pool = null;
 
-/** Convierte flags de env a booleano */
+
 const toBool = (v, def = false) =>
   String(v ?? def).trim().toLowerCase() === "true";
 
@@ -16,7 +16,7 @@ const isLocalHost = (h) =>
 function buildSslOptions(useSSL) {
   if (!useSSL) return undefined;
 
-  // Acepta tanto DB_CA como MYSQL_CA (contenido en BASE64 del ca.pem)
+
   const caB64 = process.env.DB_CA || process.env.MYSQL_CA || "";
   const insecure = toBool(process.env.DB_INSECURE_SSL || process.env.MYSQL_INSECURE_SSL, false);
 
@@ -27,12 +27,12 @@ function buildSslOptions(useSSL) {
     };
   }
 
-  // Modo emergencia (NO recomendado en producción): evita el error de certificado
+
   if (insecure) {
     return { rejectUnauthorized: false, minVersion: "TLSv1.2" };
   }
 
-  // Si pides SSL pero no diste CA, mantén estricto y fallará de forma explícita
+
   return { rejectUnauthorized: true, minVersion: "TLSv1.2" };
 }
 
@@ -48,7 +48,6 @@ export async function connectDB() {
 
   const ssl = buildSslOptions(useSSL);
 
-  // En local: por defecto crear/migrar/sembrar. En nube: no.
   const defaultBoot = isLocalHost(host);
   const createDbOnBoot = toBool(process.env.CREATE_DB_ON_BOOT, defaultBoot);
   const migrateOnBoot  = toBool(process.env.MIGRATE_ON_BOOT,  defaultBoot);
@@ -56,11 +55,11 @@ export async function connectDB() {
 
   console.log(`🔌 Conectando a MySQL ${user}@${host}:${port} db=${database} ssl=${useSSL}`);
 
-  // 1) Crear BD si no existe (si hay permisos)
+  // 1) Crear BD si no existe 
   if (createDbOnBoot) {
     const admin = await mysql.createConnection({
       host, port, user, password,
-      ssl, // <<<<<<<<<< usa el mismo SSL (con CA) también aquí
+      ssl,
     });
     try {
       await admin.query(`CREATE DATABASE IF NOT EXISTS \`${database}\``);
@@ -72,27 +71,24 @@ export async function connectDB() {
     }
   }
 
-  // 2) Crear pool
+
   pool = mysql.createPool({
     host, port, user, password, database,
     waitForConnections: true,
     connectionLimit: 10,
     queueLimit: 0,
     multipleStatements: false,
-    ssl, // <<<<<<<<<< usa SSL con CA en el pool
+    ssl, 
   });
 
-  // Verificación
   const [ping] = await pool.query("SELECT 1 AS db_ok");
   console.log("✅ MySQL listo:", ping[0]);
 
-  // 3) Migraciones
   if (migrateOnBoot) {
     await runMigrations(pool);
     console.log("🗄️ Migraciones aplicadas (tablas creadas o ya existentes)");
   }
 
-  // 4) Seeds
   if (seedOnBoot) {
     await runSeeds(pool);
   }
@@ -105,7 +101,6 @@ export function getPool() {
   return pool;
 }
 
-// Alias para compatibilidad
 export const connection = new Proxy({}, {
   get(_t, prop) {
     const p = getPool();
@@ -211,7 +206,6 @@ async function runMigrations(pool) {
     await pool.query(sql);
   }
 
-  // Compatibilidad: si la tabla pagos existe pero sin 'nombre_empleado', agrégala.
   try {
     await pool.query(`ALTER TABLE pagos ADD COLUMN nombre_empleado VARCHAR(100) NULL`);
     console.log("🧱 Columna pagos.nombre_empleado agregada");
