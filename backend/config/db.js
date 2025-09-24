@@ -1,101 +1,142 @@
 // config/db.js
+
 import 'dotenv/config';
 import mysql from "mysql2/promise";
 import bcrypt from "bcrypt";
+/**
+ * @file Configuración y conexión a la base de datos MySQL
+ * Incluye migraciones y seeds automáticos.
+ */
+
 
 let pool = null;
 
 
+
+/**
+ * Convierte un valor a booleano
+ */
 const toBool = (v, def = false) =>
   String(v ?? def).trim().toLowerCase() === "true";
 
+
+/**
+ * Verifica si el host es localhost
+ */
 const isLocalHost = (h) =>
   ["localhost", "127.0.0.1"].includes(String(h || "").toLowerCase());
 
-/** Construye opciones SSL en base a variables de entorno */
+
+/**
+ * Construye opciones SSL en base a variables de entorno
+ */
 function buildSslOptions(useSSL) {
   if (!useSSL) return undefined;
-
-
   const caB64 = process.env.DB_CA || process.env.MYSQL_CA || "";
   const insecure = toBool(process.env.DB_INSECURE_SSL || process.env.MYSQL_INSECURE_SSL, false);
-
   if (caB64 && !insecure) {
     return {
       ca: Buffer.from(caB64, "base64").toString("utf-8"),
       minVersion: "TLSv1.2",
     };
   }
-
-
   if (insecure) {
     return { rejectUnauthorized: false, minVersion: "TLSv1.2" };
   }
-
-
   return { rejectUnauthorized: true, minVersion: "TLSv1.2" };
 }
 
+
+/**
+ * Inicializa la conexión a la base de datos y ejecuta migraciones/seeds si corresponde
+ * @returns {Promise<mysql.Pool>} pool de conexiones
+ */
 export async function connectDB() {
   if (pool) return pool;
 
+  // Validación de variables de entorno
   const host = process.env.DB_HOST || process.env.MYSQL_HOST || "";
   const port = Number(process.env.DB_PORT || process.env.MYSQL_PORT || 3306);
   const user = process.env.DB_USER || process.env.MYSQL_USER || "";
   const password = process.env.DB_PASSWORD || process.env.MYSQL_PASSWORD || "";
   const database = process.env.DB_NAME || process.env.MYSQL_DB || "";
-  const useSSL = toBool(process.env.DB_SSL || process.env.MYSQL_SSL, !isLocalHost(host));
+  if (!host || !user || !password || !database) {
+    throw new Error("Faltan variables de entorno críticas para la conexión a la base de datos");
+  }
 
+  const useSSL = toBool(process.env.DB_SSL || process.env.MYSQL_SSL, !isLocalHost(host));
   const ssl = buildSslOptions(useSSL);
+
+  // Permitir configuración dinámica del pool
+  const connectionLimit = Number(process.env.DB_POOL_LIMIT || 10);
+  const queueLimit = Number(process.env.DB_QUEUE_LIMIT || 0);
 
   const defaultBoot = isLocalHost(host);
   const createDbOnBoot = toBool(process.env.CREATE_DB_ON_BOOT, defaultBoot);
   const migrateOnBoot  = toBool(process.env.MIGRATE_ON_BOOT,  defaultBoot);
-  const seedOnBoot     = toBool(process.env.SEED_ON_BOOT,     defaultBoot);
+  // Seeds solo en desarrollo
+  const seedOnBoot     = toBool(process.env.SEED_ON_BOOT,     defaultBoot) && process.env.NODE_ENV !== 'production';
 
   console.log(`🔌 Conectando a MySQL ${user}@${host}:${port} db=${database} ssl=${useSSL}`);
 
-  // 1) Crear BD si no existe 
+  // 1) Crear BD si no existe
   if (createDbOnBoot) {
-    const admin = await mysql.createConnection({
-      host, port, user, password,
-      ssl,
-    });
+    let admin;
     try {
+      admin = await mysql.createConnection({ host, port, user, password, ssl });
       await admin.query(`CREATE DATABASE IF NOT EXISTS \`${database}\``);
       console.log(`📦 Base de datos '${database}' lista`);
     } catch (e) {
-      console.warn(`⚠️ No se pudo crear la BD '${database}': ${e.code || e.message}`);
+      console.error(`⚠️ Error creando la BD '${database}':`, e);
+      throw e;
     } finally {
-      await admin.end();
+      if (admin) await admin.end();
     }
   }
-
 
   pool = mysql.createPool({
     host, port, user, password, database,
     waitForConnections: true,
-    connectionLimit: 10,
-    queueLimit: 0,
+    connectionLimit,
+    queueLimit,
     multipleStatements: false,
-    ssl, 
+    ssl,
   });
 
-  const [ping] = await pool.query("SELECT 1 AS db_ok");
-  console.log("✅ MySQL listo:", ping[0]);
+  try {
+    const [ping] = await pool.query("SELECT 1 AS db_ok");
+    console.log("✅ MySQL listo:", ping[0]);
+  } catch (e) {
+    console.error("❌ Error al conectar con MySQL:", e);
+    throw e;
+  }
 
   if (migrateOnBoot) {
-    await runMigrations(pool);
-    console.log("🗄️ Migraciones aplicadas (tablas creadas o ya existentes)");
+    try {
+      await runMigrations(pool);
+      console.log("🗄️ Migraciones aplicadas (tablas creadas o ya existentes)");
+    } catch (e) {
+      console.error("❌ Error en migraciones:", e);
+      throw e;
+    }
   }
 
   if (seedOnBoot) {
-    await runSeeds(pool);
+    try {
+      await runSeeds(pool);
+    } catch (e) {
+      console.error("❌ Error en seeds:", e);
+      throw e;
+    }
   }
 
   return pool;
 }
 
+
+/**
+ * Retorna el pool de conexiones actual
+ */
 export function getPool() {
   if (!pool) throw new Error("DB pool no inicializado. Llama a connectDB() primero.");
   return pool;
@@ -111,6 +152,10 @@ export const connection = new Proxy({}, {
 /* =========================
    MIGRACIONES (CREATE TABLE)
    ========================= */
+/**
+ * Ejecuta las migraciones de la base de datos
+ * @param {mysql.Pool} pool
+ */
 async function runMigrations(pool) {
   const statements = [
     `CREATE TABLE IF NOT EXISTS usuarios (
@@ -206,9 +251,13 @@ async function runMigrations(pool) {
     await pool.query(sql);
   }
 
+  // Mejor práctica: verificar si la columna existe antes de agregarla
   try {
-    await pool.query(`ALTER TABLE pagos ADD COLUMN nombre_empleado VARCHAR(100) NULL`);
-    console.log("🧱 Columna pagos.nombre_empleado agregada");
+    const [cols] = await pool.query("SHOW COLUMNS FROM pagos LIKE 'nombre_empleado'");
+    if (!cols.length) {
+      await pool.query(`ALTER TABLE pagos ADD COLUMN nombre_empleado VARCHAR(100) NULL`);
+      console.log("🧱 Columna pagos.nombre_empleado agregada");
+    }
   } catch (e) {
     if (e?.errno !== 1060) throw e; // 1060 = duplicate column
   }
@@ -217,6 +266,10 @@ async function runMigrations(pool) {
 /* =========================
    SEEDS (admin + datos demo)
    ========================= */
+/**
+ * Inserta datos de prueba (solo en desarrollo)
+ * @param {mysql.Pool} pool
+ */
 async function runSeeds(pool) {
   // Admin
   const [users] = await pool.query(
